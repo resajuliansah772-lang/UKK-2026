@@ -2,184 +2,381 @@
 
 session_start();
 
-include "includes/cek_session.php";
+if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
+    header("Location: login.php");
+    exit;
+}
 
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
+
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            min-height: 100vh;
+        }
+
+
+        /* Semua menu sidebar */
+
+        .sidebar .nav-link {
+
+            color: white;
+
+            border-radius: 6px;
+
+            padding: 10px 14px;
+
+            transition: 0.2s;
+
+        }
+
+
+        /* Efek saat kursor diarahkan */
+
+        .sidebar .nav-link:hover {
+
+            background-color: #0d6efd;
+
+            color: white;
+
+        }
+
+
+        /* Menu Logout */
+
+        .sidebar .logout {
+
+            color: #dc3545 !important;
+
+        }
+
+
+        /* Hover Logout */
+
+        .sidebar .logout:hover {
+
+            background-color: #dc3545;
+
+            color: white !important;
+
+        }
+
+    </style>
+
 </head>
+
+
 <body>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
-    
+
 <div class="container-fluid">
+
     <div class="row">
 
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
+
+        <!-- =====================================
+             SIDEBAR
+        ====================================== -->
+
+        <div class="col-md-3 col-lg-2 bg-dark p-3 sidebar">
+
+
+            <!-- Judul Website -->
 
             <h4 class="text-white mb-4">
+
                 My Website
+
             </h4>
-            <?php if ($_SESSION['role'] == 'admin') { ?>
+
+
+            <!-- Menu Sidebar -->
+
             <ul class="nav nav-pills flex-column">
 
+
+                <!-- ==============================
+                     DASHBOARD
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="dashboard.php" class="nav-link active">
+
+                    <a href="dashboard.php" class="nav-link">
+
                         Dashboard
+
                     </a>
+
                 </li>
 
+
+                <!-- ==============================
+                     DATA SISWA
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="data_siswa.php" class="nav-link text-white">
+
+                    <a href="data_siswa.php" class="nav-link">
+
                         Data Siswa
+
                     </a>
+
                 </li>
 
+
+                <!-- ==============================
+                     DATA GURU
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="data_guru.php" class="nav-link text-white">
+
+                    <a href="data_guru.php" class="nav-link">
+
                         Data Guru
+
                     </a>
+
                 </li>
 
+
+                <!-- ==============================
+                     KELAS
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="kelas.php" class="nav-link text-white">
+
+                    <a href="kelas.php" class="nav-link">
+
                         Kelas
+
                     </a>
+
                 </li>
 
+
+                <!-- ==============================
+                     TAHUN AJARAN
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="laporan.php" class="nav-link text-white">
+
+                    <a href="tahun_ajaran.php" class="nav-link">
+
+                        Tahun Ajaran
+
+                    </a>
+
+                </li>
+
+
+                <!-- ==============================
+                     LAPORAN
+                =============================== -->
+
+                <li class="nav-item mb-2">
+
+                    <a href="laporan.php" class="nav-link">
+
                         Laporan
+
                     </a>
+
                 </li>
+
+
+                <!-- ==============================
+                     ABOUT ME
+                =============================== -->
+
                 <li class="nav-item mb-2">
-                    <a href="aboutme.php" class="nav-link text-white">
+
+                    <a href="aboutme.php" class="nav-link">
+
                         About Me
+
                     </a>
+
                 </li>
+
+
+                <!-- GARIS PEMISAH -->
+
                 <hr class="text-secondary">
 
+
+                <!-- ==============================
+                     LOGOUT
+                =============================== -->
+
                 <li class="nav-item">
-                    <a href="logout.php" class="nav-link text-danger">
+
+                    <a href="logout.php" class="nav-link logout">
+
                         Logout
+
                     </a>
+
                 </li>
+
 
             </ul>
 
         </div>
 
-    <?php } elseif ($_SESSION['role'] == 'guru') { ?> 
-        <ul class="nav nav-pills flex-column"> 
 
-            <li class="nav-item mb-2"> 
-                <a href="#" class="nav-link active"> 
-                    Dashboard 
-                </a> 
-            </li> 
 
-            <li class="nav-item mb-2"> 
-                <a href="menu3" class="nav-link text-white"> 
-                    Kelas 
-                </a> 
-            </li> 
+        <!-- =====================================
+             KONTEN DASHBOARD
+        ====================================== -->
 
-            <li class="nav-item mb-2"> 
-                <a href="menu4" class="nav-link text-white"> 
-                    laporan 
-                </a> 
-            </li> 
-
-            <li class="nav-item"> 
-                <a href="logout.php" class="nav-link text-danger"> 
-                    Logout 
-                </a> 
-            </li> 
-
-        </ul>
-
-    </div>
-
-<?php } ?> 
-
-        <!-- KONTEN -->
         <main class="col-md-9 col-lg-10 p-4">
-            <h2>Sistem Pelanggaran Siswa</h2>
-            <p>Selamat datang, <?=  htmlspecialchars($_SESSION['name']); ?></p>
-            <p>Anda login sebagai, <?=  htmlspecialchars($_SESSION['role']); ?></p>
+
+
+            <!-- Judul -->
+
+            <h2>
+
+                Dashboard
+
+            </h2>
+
+
+            <p>
+
+                Selamat datang di halaman dashboard.
+
+            </p>
+
+
+
+            <!-- =================================
+                 CARD DASHBOARD
+            ================================== -->
 
             <div class="row">
 
-                <!-- CARD DATA SISWA -->
+
+                <!-- ==============================
+                     CARD DATA SISWA
+                =============================== -->
+
                 <div class="col-md-4 mb-3">
+
                     <div class="card shadow-sm">
 
                         <div class="card-body">
 
                             <h5 class="card-title">
+
                                 Data Siswa
+
                             </h5>
 
+
                             <h2>
+
                                 120
+
                             </h2>
 
                         </div>
 
                     </div>
+
                 </div>
 
 
-                <!-- CARD DATA GURU -->
+
+                <!-- ==============================
+                     CARD DATA GURU
+                =============================== -->
 
                 <div class="col-md-4 mb-3">
+
                     <div class="card shadow-sm">
 
                         <div class="card-body">
 
                             <h5 class="card-title">
+
                                 Data Guru
+
                             </h5>
 
+
                             <h2>
+
                                 25
+
                             </h2>
 
                         </div>
 
                     </div>
+
                 </div>
 
 
-                <!-- CARD KELAS -->
+
+                <!-- ==============================
+                     CARD KELAS
+                =============================== -->
+
                 <div class="col-md-4 mb-3">
+
                     <div class="card shadow-sm">
 
                         <div class="card-body">
 
                             <h5 class="card-title">
+
                                 Kelas
+
                             </h5>
 
+
                             <h2>
+
                                 12
+
                             </h2>
 
                         </div>
 
                     </div>
+
                 </div>
+
 
             </div>
 
+
         </main>
 
+
     </div>
+
 </div>
+
+
 </body>
+
 </html>
