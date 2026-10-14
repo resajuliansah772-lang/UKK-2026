@@ -2,10 +2,12 @@
 
 session_start();
 
-if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
+if (!isset($_SESSION['login'])) {
     header("Location: login.php");
     exit;
 }
+
+$halaman = 'dashboard';
 
 ?>
 
@@ -16,267 +18,77 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Dashboard</title>
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
 
-        /* =========================
-           SIDEBAR
-        ========================= */
-
-        .sidebar {
-            min-height: 100vh;
+        .nav-link {
+            transition: all 0.3s ease;
         }
 
-
-        /* Semua menu sidebar */
-
-        .sidebar .nav-link {
-
-            color: white;
-
-            border-radius: 6px;
-
-            padding: 10px 14px;
-
-            transition: 0.2s;
-
-        }
-
-
-        /* Efek saat kursor diarahkan */
-
-        .sidebar .nav-link:hover {
-
-            background-color: #0d6efd;
-
-            color: white;
-
-        }
-
-
-        /* Menu Logout */
-
-        .sidebar .logout {
-
-            color: #dc3545 !important;
-
-        }
-
-
-        /* Hover Logout */
-
-        .sidebar .logout:hover {
-
-            background-color: #dc3545;
-
+        .nav-link:hover {
+            background-color: #0d6efd !important;
             color: white !important;
-
         }
-
     </style>
-
 </head>
-
-
 <body>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous">
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
+    integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y"
+    crossorigin="anonymous">
+</script>
+
 
 <div class="container-fluid">
 
     <div class="row">
 
 
-        <!-- =====================================
-             SIDEBAR
-        ====================================== -->
+        <!-- SIDEBAR -->
 
-        <div class="col-md-3 col-lg-2 bg-dark p-3 sidebar">
+        <?php include 'includes/sidebar.php'; ?>
 
 
-            <!-- Judul Website -->
-
-            <h4 class="text-white mb-4">
-
-                My Website
-
-            </h4>
-
-
-            <!-- Menu Sidebar -->
-
-            <ul class="nav nav-pills flex-column">
-
-
-                <!-- ==============================
-                     DASHBOARD
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="dashboard.php" class="nav-link">
-
-                        Dashboard
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     DATA SISWA
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="data_siswa.php" class="nav-link">
-
-                        Data Siswa
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     DATA GURU
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="data_guru.php" class="nav-link">
-
-                        Data Guru
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     KELAS
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="kelas.php" class="nav-link">
-
-                        Kelas
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     TAHUN AJARAN
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="tahun_ajaran.php" class="nav-link">
-
-                        Tahun Ajaran
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     LAPORAN
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="laporan.php" class="nav-link">
-
-                        Laporan
-
-                    </a>
-
-                </li>
-
-
-                <!-- ==============================
-                     ABOUT ME
-                =============================== -->
-
-                <li class="nav-item mb-2">
-
-                    <a href="aboutme.php" class="nav-link">
-
-                        About Me
-
-                    </a>
-
-                </li>
-
-
-                <!-- GARIS PEMISAH -->
-
-                <hr class="text-secondary">
-
-
-                <!-- ==============================
-                     LOGOUT
-                =============================== -->
-
-                <li class="nav-item">
-
-                    <a href="logout.php" class="nav-link logout">
-
-                        Logout
-
-                    </a>
-
-                </li>
-
-
-            </ul>
-
-        </div>
-
-
-
-        <!-- =====================================
-             KONTEN DASHBOARD
-        ====================================== -->
+        <!-- KONTEN -->
 
         <main class="col-md-9 col-lg-10 p-4">
 
-
-            <!-- Judul -->
-
-            <h2>
-
-                Dashboard
-
-            </h2>
-
-
-            <p>
-
-                Selamat datang di halaman dashboard.
-
-            </p>
-
-
-
-            <!-- =================================
-                 CARD DASHBOARD
-            ================================== -->
+            <h2>Dashboard</h2>
 
             <div class="row">
 
+                <p>
+                    Selamat datang,
+                    <?php echo $_SESSION['name']; ?>
+                </p>
 
-                <!-- ==============================
-                     CARD DATA SISWA
-                =============================== -->
+
+                <p>
+
+                    Role:
+
+                    <?php
+
+                    if ($_SESSION['role'] == 'admin') {
+                        echo "Admin";
+                    } else {
+                        echo "Guru";
+                    }
+
+                    ?>
+
+                </p>
+
+
+                <!-- CARD DATA SISWA -->
 
                 <div class="col-md-4 mb-3">
 
@@ -285,16 +97,11 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
                         <div class="card-body">
 
                             <h5 class="card-title">
-
                                 Data Siswa
-
                             </h5>
 
-
                             <h2>
-
                                 120
-
                             </h2>
 
                         </div>
@@ -304,10 +111,7 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
                 </div>
 
 
-
-                <!-- ==============================
-                     CARD DATA GURU
-                =============================== -->
+                <!-- CARD DATA GURU -->
 
                 <div class="col-md-4 mb-3">
 
@@ -316,16 +120,11 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
                         <div class="card-body">
 
                             <h5 class="card-title">
-
                                 Data Guru
-
                             </h5>
 
-
                             <h2>
-
                                 25
-
                             </h2>
 
                         </div>
@@ -335,10 +134,7 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
                 </div>
 
 
-
-                <!-- ==============================
-                     CARD KELAS
-                =============================== -->
+                <!-- CARD KELAS -->
 
                 <div class="col-md-4 mb-3">
 
@@ -347,16 +143,11 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
                         <div class="card-body">
 
                             <h5 class="card-title">
-
                                 Kelas
-
                             </h5>
 
-
                             <h2>
-
                                 12
-
                             </h2>
 
                         </div>
@@ -367,7 +158,6 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
 
 
             </div>
-
 
         </main>
 
