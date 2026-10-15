@@ -68,6 +68,30 @@ include "config/koneksi.php";
                 </li>
 
                 <li class="nav-item mb-2">
+                    <a href="penepatan_siswa.php" class="nav-link <?php echo ($halaman == 'penepatan_siswa') ? 'active' : 'text-white'; ?>">
+                        Penepatan Siswa
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="wali_kelas.php" class="nav-link <?php echo ($halaman == 'walikelas') ? 'active' : 'text-white'; ?>">
+                        Wali Kelas
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="kategori_pelanggaran.php" class="nav-link <?php echo ($halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
+                        Kategori Pelanggaran
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="jenis_pelanggaran.php" class="nav-link <?php echo ($halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
+                        Jenis Pelanggaran
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
                     <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>

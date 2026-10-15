@@ -46,8 +46,36 @@
 
         <li class="nav-item mb-2">
             <a href="penepatan_siswa.php"
-               class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">
-               
+               class="nav-link <?php echo ($halaman == 'penepatan_siswa') ? 'active' : 'text-white'; ?>">
+               Penepatan Siswa
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="wali_kelas.php"
+               class="nav-link <?php echo ($halaman == 'wali_kelas') ? 'active' : 'text-white'; ?>">
+               Wali Kelas
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="kategori_pelanggaran.php"
+               class="nav-link <?php echo ($halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
+               Kategori Pelanggaran
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="jenis_pelanggaran.php"
+               class="nav-link <?php echo ($halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
+               Jenis Pelanggaran
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="cetak.php"
+               class="nav-link <?php echo ($halaman == 'cetak') ? 'active' : 'text-white'; ?>">
+               Cetak/Export
             </a>
         </li>
 
@@ -130,16 +158,37 @@
         </li>
 
         <li class="nav-item mb-2">
-            <a href="data_siswa.php"
-               class="nav-link <?php echo ($halaman == 'siswa') ? 'active' : 'text-white'; ?>">
-                Data Siswa
+            <a href="catatan_pelanggaran.php"
+               class="nav-link <?php echo ($halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
+                Catatan Pelanggaran
             </a>
         </li>
 
         <li class="nav-item mb-2">
-            <a href="kelas.php"
-               class="nav-link <?php echo ($halaman == 'kelas') ? 'active' : 'text-white'; ?>">
-                Kelas
+            <a href="tindakan.php"
+               class="nav-link <?php echo ($halaman == 'tindakan') ? 'active' : 'text-white'; ?>">
+                Tindakan
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="laporan.php"
+               class="nav-link <?php echo ($halaman == 'laporan') ? 'active' : 'text-white'; ?>">
+                Laporan
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="Riwayat.php"
+               class="nav-link <?php echo ($halaman == 'riwayat') ? 'active' : 'text-white'; ?>">
+                Riwayat
+            </a>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="rekap_poin.php"
+               class="nav-link <?php echo ($halaman == 'rekap_poin') ? 'active' : 'text-white'; ?>">
+                Rekap Poin
             </a>
         </li>
 
