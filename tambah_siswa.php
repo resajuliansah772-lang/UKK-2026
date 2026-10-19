@@ -92,6 +92,12 @@ include "config/koneksi.php";
                 </li>
 
                 <li class="nav-item mb-2">
+                    <a href="cetak.php.php" class="nav-link <?php echo ($halaman == 'cetak') ? 'active' : 'text-white'; ?>">
+                        Cetak/Export
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
                     <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>

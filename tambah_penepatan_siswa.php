@@ -1,151 +1,238 @@
+
 <?php
 session_start();
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Ambil data siswa untuk dropdown
-$sql_siswa = "SELECT id, nis, nama FROM t_siswa ORDER BY nama ASC";
+$pesan = "";
+$jenis_pesan = "danger";
+
+// Mengambil data siswa
+$sql_siswa = "SELECT id, nis, nama
+              FROM t_siswa
+              WHERE status_aktif = 1
+              ORDER BY nama ASC";
+
 $query_siswa = mysqli_query($koneksi, $sql_siswa);
 
-// Ambil data kelas untuk dropdown
-$sql_kelas = "SELECT id, nama FROM t_kelas ORDER BY nama ASC";
+if (!$query_siswa) {
+    die("Gagal mengambil data siswa: " . mysqli_error($koneksi));
+}
+
+// Mengambil data kelas
+$sql_kelas = "SELECT id, nama
+              FROM t_kelas
+              ORDER BY nama ASC";
+
 $query_kelas = mysqli_query($koneksi, $sql_kelas);
+
+if (!$query_kelas) {
+    die("Gagal mengambil data kelas: " . mysqli_error($koneksi));
+}
+
+// Proses simpan penempatan siswa
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $siswa_id = filter_input(INPUT_POST, "siswa_id", FILTER_VALIDATE_INT);
+    $kelas_id = filter_input(INPUT_POST, "kelas_id", FILTER_VALIDATE_INT);
+
+    if (!$siswa_id || !$kelas_id) {
+
+        $pesan = "Siswa dan kelas wajib dipilih.";
+
+    } else {
+
+        // Pastikan siswa aktif
+        $stmt_siswa = mysqli_prepare(
+            $koneksi,
+            "SELECT id FROM t_siswa
+             WHERE id = ? AND status_aktif = 1"
+        );
+
+        mysqli_stmt_bind_param($stmt_siswa, "i", $siswa_id);
+        mysqli_stmt_execute($stmt_siswa);
+        $hasil_siswa = mysqli_stmt_get_result($stmt_siswa);
+        $siswa_valid = mysqli_num_rows($hasil_siswa) > 0;
+        mysqli_stmt_close($stmt_siswa);
+
+        // Pastikan kelas tersedia
+        $stmt_kelas = mysqli_prepare(
+            $koneksi,
+            "SELECT id FROM t_kelas WHERE id = ?"
+        );
+
+        mysqli_stmt_bind_param($stmt_kelas, "i", $kelas_id);
+        mysqli_stmt_execute($stmt_kelas);
+        $hasil_kelas = mysqli_stmt_get_result($stmt_kelas);
+        $kelas_valid = mysqli_num_rows($hasil_kelas) > 0;
+        mysqli_stmt_close($stmt_kelas);
+
+        if (!$siswa_valid) {
+
+            $pesan = "Siswa tidak ditemukan atau sudah tidak aktif.";
+
+        } elseif (!$kelas_valid) {
+
+            $pesan = "Kelas yang dipilih tidak ditemukan.";
+
+        } else {
+
+            // Cek apakah siswa sudah memiliki penempatan
+            $stmt_cek = mysqli_prepare(
+                $koneksi,
+                "SELECT siswa_id
+                 FROM t_kelas_siswa
+                 WHERE siswa_id = ?
+                 LIMIT 1"
+            );
+
+            mysqli_stmt_bind_param($stmt_cek, "i", $siswa_id);
+            mysqli_stmt_execute($stmt_cek);
+            $hasil_cek = mysqli_stmt_get_result($stmt_cek);
+            $sudah_ada = mysqli_num_rows($hasil_cek) > 0;
+            mysqli_stmt_close($stmt_cek);
+
+            if ($sudah_ada) {
+
+                $pesan = "Siswa tersebut sudah memiliki penempatan kelas.";
+
+            } else {
+
+                // Simpan penempatan
+                $stmt_simpan = mysqli_prepare(
+                    $koneksi,
+                    "INSERT INTO t_kelas_siswa (siswa_id, kelas_id)
+                     VALUES (?, ?)"
+                );
+
+                mysqli_stmt_bind_param(
+                    $stmt_simpan,
+                    "ii",
+                    $siswa_id,
+                    $kelas_id
+                );
+
+                if (mysqli_stmt_execute($stmt_simpan)) {
+
+                    mysqli_stmt_close($stmt_simpan);
+
+                    header("Location: penepatan_siswa.php?status=berhasil");
+                    exit;
+
+                } else {
+
+                    $pesan = "Gagal menyimpan data penempatan.";
+                    mysqli_stmt_close($stmt_simpan);
+                }
+            }
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Tambah Penempatan Siswa</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
 </head>
 
-<body>
+<body class="bg-light">
 
-<div class="container-fluid">
-    <div class="row">
+<div class="container py-5">
 
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark text-white p-3 min-vh-100">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
 
-            <h4>My Website</h4>
-            <hr>
+            <div class="card shadow-sm border-0">
 
-            <a href="dashboard.php"
-               class="d-block text-white text-decoration-none p-2">
-                Dashboard
-            </a>
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0">Tambah Penempatan Siswa</h4>
+                </div>
 
-            <a href="data_siswa.php"
-               class="d-block text-white text-decoration-none p-2">
-                Data Siswa
-            </a>
+                <div class="card-body p-4">
 
-            <a href="data_guru.php"
-               class="d-block text-white text-decoration-none p-2">
-                Data Guru
-            </a>
+                    <p class="text-muted">
+                        Pilih siswa dan kelas yang akan ditempati.
+                    </p>
 
-            <a href="kelas.php"
-               class="d-block text-white text-decoration-none p-2">
-                Kelas
-            </a>
+                    <?php if ($pesan !== ""): ?>
+                        <div class="alert alert-<?= htmlspecialchars($jenis_pesan) ?>">
+                            <?= htmlspecialchars($pesan) ?>
+                        </div>
+                    <?php endif; ?>
 
-            <a href="tahun_ajaran.php"
-               class="d-block text-white text-decoration-none p-2">
-                Tahun Ajaran
-            </a>
-
-            <a href="penempatan_siswa.php"
-               class="d-block bg-primary text-white text-decoration-none rounded p-2">
-                Penempatan Siswa
-            </a>
-
-            <a href="wali_kelas.php"
-               class="d-block text-white text-decoration-none p-2">
-                Wali Kelas
-            </a>
-
-            <a href="kategori_pelanggaran.php"
-               class="d-block text-white text-decoration-none p-2">
-                Kategori Pelanggaran
-            </a>
-
-            <a href="jenis_pelanggaran.php"
-               class="d-block text-white text-decoration-none p-2">
-                Jenis Pelanggaran
-            </a>
-
-            <a href="laporan.php"
-               class="d-block text-white text-decoration-none p-2">
-                Laporan
-            </a>
-
-            <a href="aboutme.php"
-               class="d-block text-white text-decoration-none p-2">
-                About Me
-            </a>
-
-            <hr>
-
-            <a href="logout.php"
-               class="d-block text-danger text-decoration-none p-2">
-                Logout
-            </a>
-
-        </div>
-
-        <!-- KONTEN UTAMA -->
-        <div class="col-md-9 col-lg-10 p-4">
-
-            <div class="mb-4">
-                <h2>Tambah Penempatan Siswa</h2>
-                <p class="text-muted">Form untuk menempatkan siswa ke dalam kelas.</p>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-body">
-
-                    <form action="proses_tambah_penempatan_siswa.php" method="POST">
+                    <form method="POST" action="">
 
                         <div class="mb-3">
-                            <label for="siswa_id" class="form-label">Pilih Siswa</label>
-                            <select name="siswa_id" id="siswa_id" class="form-select" required>
+                            <label for="siswa_id" class="form-label">
+                                Nama Siswa
+                            </label>
+
+                            <select name="siswa_id" id="siswa_id"
+                                    class="form-select" required>
+
                                 <option value="">-- Pilih Siswa --</option>
-                                <?php while ($s = mysqli_fetch_assoc($query_siswa)) { ?>
-                                    <option value="<?= $s['id']; ?>">
-                                        <?= htmlspecialchars($s['nis'] . ' - ' . $s['nama']); ?>
+
+                                <?php while ($siswa = mysqli_fetch_assoc($query_siswa)): ?>
+                                    <option
+                                        value="<?= (int) $siswa['id'] ?>"
+                                        <?= (isset($siswa_id) &&
+                                            (int) $siswa_id === (int) $siswa['id'])
+                                            ? 'selected' : '' ?>>
+
+                                        <?= htmlspecialchars($siswa['nis']) ?>
+                                        - 
+                                        <?= htmlspecialchars($siswa['nama']) ?>
+
                                     </option>
-                                <?php } ?>
+                                <?php endwhile; ?>
+
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="kelas_id" class="form-label">Pilih Kelas</label>
-                            <select name="kelas_id" id="kelas_id" class="form-select" required>
+                        <div class="mb-4">
+                            <label for="kelas_id" class="form-label">
+                                Nama Kelas
+                            </label>
+
+                            <select name="kelas_id" id="kelas_id"
+                                    class="form-select" required>
+
                                 <option value="">-- Pilih Kelas --</option>
-                                <?php while ($k = mysqli_fetch_assoc($query_kelas)) { ?>
-                                    <option value="<?= $k['id']; ?>">
-                                        <?= htmlspecialchars($k['nama']); ?>
+
+                                <?php while ($kelas = mysqli_fetch_assoc($query_kelas)): ?>
+                                    <option
+                                        value="<?= (int) $kelas['id'] ?>"
+                                        <?= (isset($kelas_id) &&
+                                            (int) $kelas_id === (int) $kelas['id'])
+                                            ? 'selected' : '' ?>>
+
+                                        <?= htmlspecialchars($kelas['nama']) ?>
+
                                     </option>
-                                <?php } ?>
+                                <?php endwhile; ?>
+
                             </select>
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="penempatan_siswa.php" class="btn btn-secondary">
-                                &larr; Kembali
+
+                            <a href="penepatan_siswa.php"
+                               class="btn btn-secondary">
+                                Kembali
                             </a>
 
                             <button type="submit" class="btn btn-primary">
                                 Simpan Penempatan
                             </button>
+
                         </div>
 
                     </form>
@@ -154,9 +241,11 @@ $query_kelas = mysqli_query($koneksi, $sql_kelas);
             </div>
 
         </div>
-
     </div>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

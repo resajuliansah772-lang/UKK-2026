@@ -9,8 +9,7 @@ $kolom_ta = [];
 $hasil_kolom = mysqli_query($koneksi, "SHOW COLUMNS FROM t_tahun_ajaran");
 
 if (!$hasil_kolom) {
-    die("Gagal membaca tabel tahun ajaran: " .
-        mysqli_error($koneksi));
+    die("Gagal membaca tabel tahun ajaran: " . mysqli_error($koneksi));
 }
 
 while ($kolom = mysqli_fetch_assoc($hasil_kolom)) {
@@ -34,7 +33,7 @@ foreach ($pilihan_kolom as $nama_kolom) {
     }
 }
 
-// Jika belum ditemukan, gunakan ID tahun ajaran
+// Jika kolom nama tidak ditemukan, gunakan ID tahun ajaran
 $select_ta = $kolom_nama_ta
     ? "ta.`" . $kolom_nama_ta . "` AS nama_tahun_ajaran"
     : "ta.id AS nama_tahun_ajaran";
@@ -62,8 +61,7 @@ $sql = "SELECT
 $query = mysqli_query($koneksi, $sql);
 
 if (!$query) {
-    die("Gagal mengambil data wali kelas: " .
-        mysqli_error($koneksi));
+    die("Gagal mengambil data wali kelas: " . mysqli_error($koneksi));
 }
 ?>
 
@@ -73,9 +71,15 @@ if (!$query) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Wali Kelas</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css"
           rel="stylesheet">
 
     <style>
@@ -86,6 +90,15 @@ if (!$query) {
         .nav-link:hover {
             background-color: #0d6efd !important;
             color: white !important;
+        }
+
+        #tabelWaliKelas th,
+        #tabelWaliKelas td {
+            vertical-align: middle;
+        }
+
+        .dataTables_wrapper {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -98,9 +111,7 @@ if (!$query) {
         <!-- SIDEBAR -->
         <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">
-                My Website
-            </h4>
+            <h4 class="text-white mb-4">My Website</h4>
 
             <ul class="nav nav-pills flex-column">
 
@@ -136,12 +147,12 @@ if (!$query) {
 
                 <li class="nav-item mb-2">
                     <a href="penepatan_siswa.php" class="nav-link text-white">
-                       Penepatan Siswa
+                        Penepatan Siswa
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="wali_kelas.php" class="nav-link text-white">
+                    <a href="wali_kelas.php" class="nav-link active">
                         Wali Kelas
                     </a>
                 </li>
@@ -151,7 +162,7 @@ if (!$query) {
                         Kategori Pelanggaran
                     </a>
                 </li>
-                
+
                 <li class="nav-item mb-2">
                     <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         Jenis Pelanggaran
@@ -188,8 +199,9 @@ if (!$query) {
 
         </div>
 
+
         <!-- KONTEN UTAMA -->
-        <div class="col-md-9 col-lg-10 p-4">
+        <main class="col-md-9 col-lg-10 p-4">
 
             <h2>Wali Kelas</h2>
 
@@ -198,19 +210,19 @@ if (!$query) {
             </p>
 
             <div class="mb-3">
-                <a href="tambah_wali_kelas.php"
-                   class="btn btn-primary">
+                <a href="tambah_wali_kelas.php" class="btn btn-primary">
                     + Tambah Wali Kelas
                 </a>
             </div>
 
-            <!-- TABEL WALI KELAS -->
-            <div class="card">
+            <!-- TABEL DATATABLES -->
+            <div class="card shadow-sm">
                 <div class="card-body">
 
                     <div class="table-responsive">
 
-                        <table class="table table-bordered table-striped table-hover">
+                        <table id="tabelWaliKelas"
+                               class="table table-bordered table-striped table-hover w-100">
 
                             <thead class="table-dark">
                                 <tr>
@@ -226,30 +238,23 @@ if (!$query) {
                             </thead>
 
                             <tbody>
-
                             <?php
                             $no = 1;
 
-                            if (mysqli_num_rows($query) > 0) {
-                                while ($row = mysqli_fetch_assoc($query)) {
+                            while ($row = mysqli_fetch_assoc($query)) {
                             ?>
-
                                 <tr>
                                     <td><?= $no++; ?></td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['nama_guru'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['nama_guru'] ?? '-'); ?>
                                     </td>
 
                                     <td>
                                         <?= htmlspecialchars(
                                             trim(
-                                                ($row['nama_kelas'] ?? '-') .
-                                                ' ' .
-                                                ($row['tingkat'] ?? '') .
-                                                ' ' .
+                                                ($row['nama_kelas'] ?? '-') . ' ' .
+                                                ($row['tingkat'] ?? '') . ' ' .
                                                 ($row['jurusan'] ?? '')
                                             )
                                         ); ?>
@@ -262,15 +267,11 @@ if (!$query) {
                                     </td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['tanggal_mulai'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['tanggal_mulai'] ?? '-'); ?>
                                     </td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['tanggal_selesai'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['tanggal_selesai'] ?? '-'); ?>
                                     </td>
 
                                     <td>
@@ -286,32 +287,21 @@ if (!$query) {
                                     </td>
 
                                     <td>
-                                        <a href="edit_wali_kelas.php?id=<?= (int) $row['id']; ?>"
-                                           class="btn btn-warning btn-sm">
-                                            Edit
-                                        </a>
+                                        <div class="d-flex gap-1">
+                                            <a href="edit_wali_kelas.php?id=<?= (int) $row['id']; ?>"
+                                               class="btn btn-warning btn-sm">
+                                                Edit
+                                            </a>
 
-                                        <a href="hapus_wali_kelas.php?id=<?= (int) $row['id']; ?>"
-                                           class="btn btn-danger btn-sm"
-                                           onclick="return confirm('Yakin ingin menghapus data wali kelas ini?')">
-                                            Hapus
-                                        </a>
+                                            <a href="hapus_wali_kelas.php?id=<?= (int) $row['id']; ?>"
+                                               class="btn btn-danger btn-sm"
+                                               onclick="return confirm('Yakin ingin menghapus data wali kelas ini?');">
+                                                Hapus
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
-
-                            <?php
-                                }
-                            } else {
-                            ?>
-
-                                <tr>
-                                    <td colspan="8" class="text-center">
-                                        Belum ada data wali kelas.
-                                    </td>
-                                </tr>
-
                             <?php } ?>
-
                             </tbody>
 
                         </table>
@@ -321,10 +311,77 @@ if (!$query) {
                 </div>
             </div>
 
-        </div>
+        </main>
 
     </div>
 </div>
+
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- INISIALISASI DATATABLES -->
+<script>
+$(document).ready(function () {
+
+    $('#tabelWaliKelas').DataTable({
+
+        pageLength: 10,
+
+        lengthMenu: [5, 10, 25, 50, 100],
+
+        searching: true,
+
+        ordering: true,
+
+        paging: true,
+
+        info: true,
+
+        columnDefs: [
+            {
+                targets: [0, 7],
+                orderable: false,
+                searchable: false
+            }
+        ],
+
+        order: [[0, 'asc']],
+
+        language: {
+            search: "Cari data:",
+
+            lengthMenu: "Tampilkan _MENU_ data",
+
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+
+            infoEmpty: "Tidak ada data wali kelas",
+
+            infoFiltered: "(difilter dari _MAX_ total data)",
+
+            zeroRecords: "Data wali kelas tidak ditemukan",
+
+            emptyTable: "Belum ada data wali kelas",
+
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
+            }
+        }
+
+    });
+
+});
+</script>
 
 </body>
 </html>
