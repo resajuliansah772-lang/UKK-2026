@@ -89,7 +89,7 @@ $hobi = "Main game";
                 <li class="nav-item mb-2">
                     <a href="penempatan_siswa.php"
                        class="nav-link <?php echo (isset($halaman) && $halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
-                        Penetapan Siswa
+                        Penepatan Siswa
                     </a>
                 </li>
 

@@ -4,22 +4,31 @@ session_start();
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Ambil data catatan pelanggaran
+// Penanda halaman aktif
+$halaman = 'catatan_pelanggaran';
+
+// Query mengambil data catatan pelanggaran siswa dengan relasi lengkap ke t_siswa, t_pelanggaran, t_pelanggaran_kategori, dan t_guru
 $sql = "SELECT 
-            ps.*, 
-            s.nis, 
-            s.nama AS nama_siswa, 
-            p.nama AS nama_pelanggaran, 
-            p.poin 
+            ps.id,
+            ps.tanggal,
+            ps.keterangan,
+            s.nis,
+            s.nama AS nama_siswa,
+            p.nama AS nama_pelanggaran,
+            p.poin,
+            pk.nama AS nama_kategori,
+            g.nama AS nama_guru
         FROM t_pelanggaran_siswa ps
-        JOIN t_siswa s ON ps.siswa_id = s.id
-        JOIN t_pelanggaran p ON ps.pelanggaran_id = p.id
-        ORDER BY ps.id DESC";
+        LEFT JOIN t_siswa s ON ps.siswa_id = s.id
+        LEFT JOIN t_pelanggaran p ON ps.pelanggaran_id = p.id
+        LEFT JOIN t_pelanggaran_kategori pk ON p.pelanggaran_kategori_id = pk.id
+        LEFT JOIN t_guru g ON ps.guru_id = g.id
+        ORDER BY ps.tanggal DESC, ps.id DESC";
 
 $query = mysqli_query($koneksi, $sql);
 
 if (!$query) {
-    $error_message = mysqli_error($koneksi);
+    die("Gagal mengambil data catatan pelanggaran: " . mysqli_error($koneksi));
 }
 ?>
 
@@ -29,11 +38,35 @@ if (!$query) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Catatan Pelanggaran</title>
 
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+    <style>
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        #tabelCatatan th,
+        #tabelCatatan td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dataTables_wrapper {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -42,124 +75,187 @@ if (!$query) {
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark text-white p-3 min-vh-100">
+        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100 sidebar">
 
-            <h4>Pelanggaran Siswa</h4>
-            <hr>
+            <h4 class="text-white mb-4">
+                Pelanggaran Siswa
+            </h4>
 
-            <a href="dashboard.php"
-               class="d-block text-white text-decoration-none p-2">
-                Dashboard
-            </a>
+            <hr class="text-secondary">
 
-            <a href="catatan_pelanggaran.php"
-               class="d-block bg-primary text-white text-decoration-none rounded p-2">
-                Catatan Pelanggaran
-            </a>
+            <ul class="nav nav-pills flex-column">
 
-            <a href="tindakan.php"
-               class="d-block text-white text-decoration-none p-2">
-                Tindakan
-            </a>
+                <li class="nav-item mb-2">
+                    <a href="dashboard.php" class="nav-link text-white">
+                        Dashboard
+                    </a>
+                </li>
 
-            <a href="laporan.php"
-               class="d-block text-white text-decoration-none p-2">
-                Laporan
-            </a>
+                <li class="nav-item mb-2">
+                    <a href="catatan_pelanggaran.php" class="nav-link <?php echo ($halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
+                        Catatan Pelanggaran
+                    </a>
+                </li>
 
-            <a href="riwayat.php"
-               class="d-block text-white text-decoration-none p-2">
-                Riwayat
-            </a>
+                <li class="nav-item mb-2">
+                    <a href="tindakan.php" class="nav-link text-white">
+                        Tindakan
+                    </a>
+                </li>
 
-            <a href="rekap_poin.php"
-               class="d-block text-white text-decoration-none p-2">
-                Rekap Poin
-            </a>
+                <li class="nav-item mb-2">
+                    <a href="laporan.php" class="nav-link text-white">
+                        Laporan
+                    </a>
+                </li>
 
-            <hr>
+                <li class="nav-item mb-2">
+                    <a href="riwayat.php" class="nav-link text-white">
+                        Riwayat
+                    </a>
+                </li>
 
-            <a href="logout.php"
-               class="d-block text-danger text-decoration-none p-2">
-                Logout
-            </a>
+                <li class="nav-item mb-2">
+                    <a href="rekap_poin.php" class="nav-link text-white">
+                        Rekap Poin
+                    </a>
+                </li>
 
+                <hr class="text-secondary">
+
+                <li class="nav-item">
+                    <a href="logout.php" class="nav-link text-danger">
+                        Logout
+                    </a>
+                </li>
+
+            </ul>
         </div>
 
         <!-- KONTEN UTAMA -->
-        <div class="col-md-9 col-lg-10 p-4">
+        <main class="col-md-9 col-lg-10 p-4">
 
-            <!-- HEADER DENGAN TOMBOL DI SEBELAH KANAN (FLEXBOX) -->
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <h2>Catatan Pelanggaran</h2>
-                    <p class="text-muted mb-0">Daftar pelanggaran siswa yang tercatat dalam sistem.</p>
+            <h2>Catatan Pelanggaran</h2>
+
+            <p class="text-muted">
+                Daftar transaksi pencatatan pelanggaran siswa di sekolah.
+            </p>
+
+            <?php if (isset($_GET['status']) && $_GET['status'] === 'berhasil'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    Catatan pelanggaran siswa berhasil disimpan!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <div>
-                    <a href="tambah_catatan_pelanggaran.php" class="btn btn-primary">
-                        + Tambah Catatan
-                    </a>
+            <?php endif; ?>
+
+            <!-- TOMBOL TAMBAH -->
+            <div class="mb-3">
+                <a href="tambah_catatan_pelanggaran.php" class="btn btn-primary">
+                    + Tambah Catatan Pelanggaran
+                </a>
+            </div>
+
+            <!-- TABEL CATATAN PELANGGARAN -->
+            <div class="card shadow-sm border">
+                <div class="card-body">
+
+                    <div class="table-responsive">
+
+                        <table id="tabelCatatan" class="table table-bordered table-striped table-hover w-100">
+
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal</th>
+                                    <th>NIS</th>
+                                    <th>Nama Siswa</th>
+                                    <th>Kategori</th>
+                                    <th>Jenis Pelanggaran</th>
+                                    <th>Poin</th>
+                                    <th>Pelapor / Guru</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <?php
+                                $no = 1;
+                                while ($row = mysqli_fetch_assoc($query)) {
+                                ?>
+                                    <tr>
+                                        <td><?= $no++; ?></td>
+                                        <td><?= !empty($row['tanggal']) ? date('d-m-Y', strtotime($row['tanggal'])) : '-'; ?></td>
+                                        <td><?= htmlspecialchars($row['nis'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['nama_siswa'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['nama_kategori'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['nama_pelanggaran'] ?? '-'); ?></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">
+                                                +<?= (int) ($row['poin'] ?? 0); ?>
+                                            </span>
+                                        </td>
+                                        <td><?= htmlspecialchars($row['nama_guru'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['keterangan'] ?? '-'); ?></td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+
+                        </table>
+
+                    </div>
                 </div>
             </div>
 
-            <?php if (isset($error_message)) { ?>
-                <div class="alert alert-warning" role="alert">
-                    <strong>Informasi Database:</strong> Terdeteksi kendala query.<br>
-                    Detail error: <?= htmlspecialchars($error_message); ?>
-                </div>
-            <?php } ?>
-
-            <!-- TABEL -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>No</th>
-                            <th>NIS</th>
-                            <th>Nama Siswa</th>
-                            <th>Pelanggaran</th>
-                            <th>Poin</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                    <?php
-                    if (isset($query) && $query && mysqli_num_rows($query) > 0) {
-                        $no = 1;
-                        while ($row = mysqli_fetch_assoc($query)) {
-                    ?>
-                        <tr>
-                            <td><?= $no++; ?></td>
-                            <td><?= htmlspecialchars($row['nis']); ?></td>
-                            <td><?= htmlspecialchars($row['nama_siswa']); ?></td>
-                            <td><?= htmlspecialchars($row['nama_pelanggaran']); ?></td>
-                            <td>
-                                <span class="badge bg-danger">
-                                    <?= htmlspecialchars($row['poin']); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <a href="edit_catatan_pelanggaran.php?id=<?= $row['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                                <a href="hapus_catatan_pelanggaran.php?id=<?= $row['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Yakin ingin menghapus catatan ini?')">Hapus</a>
-                            </td>
-                        </tr>
-                    <?php
-                        }
-                    } else {
-                    ?>
-                        <tr>
-                            <td colspan="6" class="text-center">Belum ada data catatan pelanggaran.</td>
-                        </tr>
-                    <?php } ?>
-                    </tbody>
-                </table>
-            </div>
-
-        </div>
+        </main>
 
     </div>
 </div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
+
+<!-- AKTIFKAN DATATABLES -->
+<script>
+$(document).ready(function () {
+    $('#tabelCatatan').DataTable({
+        pageLength: 10,
+        lengthMenu: [5, 10, 25, 50, 100],
+        searching: true,
+        ordering: true,
+        paging: true,
+        info: true,
+        columnDefs: [
+            {
+                targets: [0],
+                orderable: false,
+                searchable: false
+            }
+        ],
+        language: {
+            search: "Cari data:",
+            lengthMenu: "Tampilkan _MENU_ data",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data catatan pelanggaran",
+            infoFiltered: "(difilter dari _MAX_ total data)",
+            zeroRecords: "Data catatan pelanggaran tidak ditemukan",
+            emptyTable: "Belum ada catatan pelanggaran",
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
+            }
+        }
+    });
+});
+</script>
 
 </body>
 </html>

@@ -1,27 +1,35 @@
 <?php
-
 session_start();
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Mengambil data penempatan siswa
-$sql = "SELECT
-            ks.*,
+// Penanda halaman aktif
+$halaman = 'penempatan_siswa';
+
+// Mengambil data penempatan siswa lengkap dengan JOIN ke t_siswa, t_kelas, dan t_tahun_ajaran
+$sql = "SELECT 
+            ks.id,
+            ks.tanggal_mulai,
+            ks.tanggal_selesai,
+            ks.status_aktif AS status_penempatan,
             s.nis,
             s.nama AS nama_siswa,
-            k.nama AS nama_kelas
+            k.nama AS nama_kelas,
+            k.tingkat,
+            k.jurusan,
+            ta.nama AS tahun_ajaran
         FROM t_kelas_siswa ks
-        JOIN t_siswa s ON ks.siswa_id = s.id
-        JOIN t_kelas k ON ks.kelas_id = k.id
-        ORDER BY s.nama ASC";
+        LEFT JOIN t_siswa s ON ks.siswa_id = s.id
+        LEFT JOIN t_kelas k ON ks.kelas_id = k.id
+        LEFT JOIN t_tahun_ajaran ta ON ks.tahun_ajaran_id = ta.id
+        ORDER BY ks.id DESC";
 
 $query = mysqli_query($koneksi, $sql);
 
 if (!$query) {
-    die("Query gagal: " . mysqli_error($koneksi));
+    die("Gagal mengambil data penempatan siswa: " . mysqli_error($koneksi));
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -54,10 +62,27 @@ if (!$query) {
         #tabelPenempatan th,
         #tabelPenempatan td {
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .dataTables_wrapper {
-            margin-top: 15px;
+            margin-top: 10px;
+        }
+
+        @media print {
+            .sidebar,
+            .no-print,
+            .dt-search,
+            .dt-length,
+            .dt-paging,
+            .dt-info {
+                display: none !important;
+            }
+
+            main {
+                width: 100% !important;
+                padding: 0 !important;
+            }
         }
     </style>
 </head>
@@ -68,7 +93,7 @@ if (!$query) {
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
+        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100 sidebar">
 
             <h4 class="text-white mb-4">
                 Pelanggaran Siswa
@@ -83,7 +108,7 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="data_siswa.php" class="nav-link text-white">
+                    <a href="data_siswa.php" class="nav-link <?php echo ($halaman == 'data_siswa') ? 'active' : 'text-white'; ?>">
                         Data Siswa
                     </a>
                 </li>
@@ -107,25 +132,25 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="penepatan_siswa.php" class="nav-link active">
+                    <a href="penempatan_siswa.php" class="nav-link <?php echo ($halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
                         Penepatan Siswa
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="wali_kelas.php" class="nav-link text-white">
+                    <a href="wali_kelas.php" class="nav-link <?php echo ($halaman == 'wali_kelas') ? 'active' : 'text-white'; ?>">
                         Wali Kelas
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="kategori_pelanggaran.php" class="nav-link text-white">
+                    <a href="kategori_pelanggaran.php" class="nav-link <?php echo ($halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
                         Kategori Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php" class="nav-link text-white">
+                    <a href="jenis_pelanggaran.php" class="nav-link <?php echo ($halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
                         Jenis Pelanggaran
                     </a>
                 </li>
@@ -151,30 +176,33 @@ if (!$query) {
                 </li>
 
             </ul>
-
         </div>
-
 
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <div class="mb-3">
+            <h2>Penempatan Siswa</h2>
 
-                <h2>Penempatan Siswa</h2>
+            <p class="text-muted">
+                Kelola data penempatan siswa ke dalam kelas dan tahun ajaran.
+            </p>
 
-                <p class="text-muted">
-                    Daftar penempatan siswa ke dalam kelas.
-                </p>
+            <?php if (isset($_GET['status']) && $_GET['status'] === 'berhasil'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    Data penempatan siswa berhasil disimpan!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
 
-                <a href="tambah_penepatan_siswa.php"
+            <!-- TOMBOL TAMBAH -->
+            <div class="mb-3 no-print">
+                <a href="tambah_penempatan_siswa.php"
                    class="btn btn-primary">
-                    + Tambah Penempatan
+                    + Tambah Penempatan Siswa
                 </a>
-
             </div>
 
-
-            <!-- TABEL DATATABLES -->
+            <!-- TABEL PENEMPATAN SISWA -->
             <div class="card shadow-sm">
                 <div class="card-body">
 
@@ -188,46 +216,47 @@ if (!$query) {
                                     <th>No</th>
                                     <th>NIS</th>
                                     <th>Nama Siswa</th>
+                                    <th>Tahun Ajaran</th>
                                     <th>Nama Kelas</th>
+                                    <th>Tingkat</th>
+                                    <th>Jurusan</th>
+                                    <th>Tanggal Mulai</th>
+                                    <th>Tanggal Selesai</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-
-                            <?php
-                            $no = 1;
-
-                            while ($row = mysqli_fetch_assoc($query)) {
-                            ?>
-
-                                <tr>
-
-                                    <td>
-                                        <?= $no++; ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($row['nis'] ?? ''); ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($row['nama_siswa'] ?? ''); ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($row['nama_kelas'] ?? ''); ?>
-                                    </td>
-
-                                </tr>
-
-                            <?php } ?>
-
+                                <?php
+                                $no = 1;
+                                while ($row = mysqli_fetch_assoc($query)) {
+                                    $status = $row['status_penempatan'] ?? 1;
+                                    $aktif = (int)$status === 1;
+                                ?>
+                                    <tr>
+                                        <td><?= $no++; ?></td>
+                                        <td><?= htmlspecialchars($row['nis'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['nama_siswa'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['tahun_ajaran'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['nama_kelas'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['tingkat'] ?? '-'); ?></td>
+                                        <td><?= htmlspecialchars($row['jurusan'] ?? '-'); ?></td>
+                                        <td><?= !empty($row['tanggal_mulai']) ? date('d-m-Y', strtotime($row['tanggal_mulai'])) : '-'; ?></td>
+                                        <td><?= !empty($row['tanggal_selesai']) ? date('d-m-Y', strtotime($row['tanggal_selesai'])) : '-'; ?></td>
+                                        <td>
+                                            <?php if ($aktif): ?>
+                                                <span class="badge bg-success">Aktif</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Tidak Aktif</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
                             </tbody>
 
                         </table>
 
                     </div>
-
                 </div>
             </div>
 
@@ -235,7 +264,6 @@ if (!$query) {
 
     </div>
 </div>
-
 
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -247,52 +275,31 @@ if (!$query) {
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 
-<!-- INISIALISASI DATATABLES -->
+<!-- AKTIFKAN DATATABLES -->
 <script>
 $(document).ready(function () {
-
     $('#tabelPenempatan').DataTable({
-
         pageLength: 10,
-
         lengthMenu: [5, 10, 25, 50, 100],
-
         searching: true,
-
         ordering: true,
-
         paging: true,
-
         info: true,
-
-        // Kolom nomor tidak perlu diurutkan atau dicari
         columnDefs: [
             {
-                targets: 0,
+                targets: [0],
                 orderable: false,
                 searchable: false
             }
         ],
-
-        // Urutkan berdasarkan nama siswa
-        order: [[2, 'asc']],
-
-        // Bahasa Indonesia
         language: {
-            search: "Cari penempatan:",
-
+            search: "Cari data:",
             lengthMenu: "Tampilkan _MENU_ data",
-
             info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-
-            infoEmpty: "Tidak ada data penempatan",
-
+            infoEmpty: "Tidak ada data penempatan siswa",
             infoFiltered: "(difilter dari _MAX_ total data)",
-
-            zeroRecords: "Data penempatan tidak ditemukan",
-
+            zeroRecords: "Data penempatan siswa tidak ditemukan",
             emptyTable: "Belum ada data penempatan siswa",
-
             paginate: {
                 first: "Pertama",
                 last: "Terakhir",
@@ -300,9 +307,7 @@ $(document).ready(function () {
                 previous: "Sebelumnya"
             }
         }
-
     });
-
 });
 </script>
 
