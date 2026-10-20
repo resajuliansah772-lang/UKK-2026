@@ -29,6 +29,7 @@ if (!$query) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
           rel="stylesheet">
+          
 </head>
 
 <body>
@@ -40,7 +41,7 @@ if (!$query) {
         <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
 
             <h4 class="text-white mb-4">
-                My Website
+                Pelanggaran Siswa
             </h4>
 
             <ul class="nav nav-pills flex-column">
@@ -100,16 +101,11 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php" class="nav-link text-white">
-                        Cetak/Export
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
                     <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>
                 </li>
+
 
                 <li class="nav-item mb-2">
                     <a href="aboutme.php" class="nav-link text-white">

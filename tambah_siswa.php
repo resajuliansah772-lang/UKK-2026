@@ -32,7 +32,7 @@ include "config/koneksi.php";
         <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
 
             <h4 class="text-white mb-4">
-                My Website
+                Pelanggaran Siswa
             </h4>
 
             <ul class="nav nav-pills flex-column">
@@ -88,12 +88,6 @@ include "config/koneksi.php";
                 <li class="nav-item mb-2">
                     <a href="jenis_pelanggaran.php" class="nav-link <?php echo ($halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
                         Jenis Pelanggaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="cetak.php.php" class="nav-link <?php echo ($halaman == 'cetak') ? 'active' : 'text-white'; ?>">
-                        Cetak/Export
                     </a>
                 </li>
 

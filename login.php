@@ -27,7 +27,7 @@ if (isset($_SESSION['login'])) {
                 <div class="card shadow border-0 rounded-4">
                     <div class="card-body p-4">
                         
-                        <h3 class="text-center fw-bold mb-4 text-success">Login System</h3>
+                        <h3 class="text-center fw-bold mb-4 text-success">Login Sistem Pelanggaran Siswa</h3>
 
                         <!-- PESAN ERROR LOGIN -->
                         <?php if (isset($_GET['pesan'])): ?>

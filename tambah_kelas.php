@@ -29,7 +29,7 @@ $halaman = 'kelas';
 
         <!-- SIDEBAR -->
         <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
-            <h4 class="text-white mb-4">My Website</h4>
+            <h4 class="text-white mb-4">Pelanggaran Siswa</h4>
 
             <!-- MENU UNTUK ADMIN -->
             <?php if ($_SESSION['role'] == 'admin') { ?>

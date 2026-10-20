@@ -76,7 +76,7 @@ if (!$query) {
         <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
 
             <h4 class="text-white mb-4">
-                My Website
+                Pelanggaran Siswa
             </h4>
 
             <!-- MENU ADMIN -->
@@ -148,18 +148,12 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="cetak.php"
-                       class="nav-link text-white">
-                        Cetak/Export
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
                     <a href="laporan.php"
                        class="nav-link text-white">
                         Laporan
                     </a>
                 </li>
+
 
                 <li class="nav-item mb-2">
                     <a href="aboutme.php"

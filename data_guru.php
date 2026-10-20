@@ -61,7 +61,7 @@ if (!$query) {
         <!-- SIDEBAR -->
         <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">My Website</h4>
+            <h4 class="text-white mb-4">Pelanggaran Siswa</h4>
 
             <ul class="nav nav-pills flex-column">
 
@@ -116,12 +116,6 @@ if (!$query) {
                 <li class="nav-item mb-2">
                     <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         Jenis Pelanggaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="cetak.php" class="nav-link text-white">
-                        Cetak/Export
                     </a>
                 </li>
 

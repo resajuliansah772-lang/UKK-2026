@@ -58,6 +58,22 @@ if (!$data) {
                 <li class="nav-item mb-2">
                     <a href="tahun_ajaran.php" class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">Tahun Ajaran</a>
                 </li>
+
+                <li class="nav-item mb-2">
+                    <a href="tahun_ajaran.php" class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">Penepatan Siswa</a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="tahun_ajaran.php" class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">Wali Kelas</a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="tahun_ajaran.php" class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">Kategori Pelanggaran</a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a href="tahun_ajaran.php" class="nav-link <?php echo ($halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">Jenis Pelanggaran</a>
+                </li>
                 <li class="nav-item mb-2">
                     <a href="laporan.php" class="nav-link <?php echo ($halaman == 'laporan') ? 'active' : 'text-white'; ?>">Laporan</a>
                 </li>

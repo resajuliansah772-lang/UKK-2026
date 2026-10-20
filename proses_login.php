@@ -13,15 +13,8 @@ $data = mysqli_fetch_assoc($query);
 
 if ($data) {
 
-    // Untuk password yang sudah di-hash
-    $password_cocok = password_verify($password, $data['password']);
-
-    // Untuk password yang masih berupa teks biasa
-    if ($password == $data['password']) {
-        $password_cocok = true;
-    }
-
-    if ($password_cocok) {
+    // Pengecekan password: bisa mendeteksi password yang di-hash ATAU teks biasa
+    if (password_verify($password, $data['password']) || $password == $data['password']) {
 
         $_SESSION['login'] = true;
         $_SESSION['id'] = $data['id'];

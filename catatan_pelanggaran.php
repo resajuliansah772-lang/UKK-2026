@@ -44,7 +44,7 @@ if (!$query) {
         <!-- SIDEBAR -->
         <div class="col-md-3 col-lg-2 bg-dark text-white p-3 min-vh-100">
 
-            <h4>My Website</h4>
+            <h4>Pelanggaran Siswa</h4>
             <hr>
 
             <a href="dashboard.php"
