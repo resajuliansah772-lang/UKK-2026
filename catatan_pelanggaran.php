@@ -4,7 +4,7 @@ session_start();
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Penanda halaman aktif
+// Penanda halaman aktif agar sidebar menyorot menu Catatan Pelanggaran
 $halaman = 'catatan_pelanggaran';
 
 // Query mengambil data catatan pelanggaran siswa dengan relasi lengkap ke t_siswa, t_pelanggaran, t_pelanggaran_kategori, dan t_guru
@@ -74,63 +74,8 @@ if (!$query) {
 <div class="container-fluid">
     <div class="row">
 
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100 sidebar">
-
-            <h4 class="text-white mb-4">
-                Pelanggaran Siswa
-            </h4>
-
-            <hr class="text-secondary">
-
-            <ul class="nav nav-pills flex-column">
-
-                <li class="nav-item mb-2">
-                    <a href="dashboard.php" class="nav-link text-white">
-                        Dashboard
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="catatan_pelanggaran.php" class="nav-link <?php echo ($halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Catatan Pelanggaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="tindakan.php" class="nav-link text-white">
-                        Tindakan
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="laporan.php" class="nav-link text-white">
-                        Laporan
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="riwayat.php" class="nav-link text-white">
-                        Riwayat
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="rekap_poin.php" class="nav-link text-white">
-                        Rekap Poin
-                    </a>
-                </li>
-
-                <hr class="text-secondary">
-
-                <li class="nav-item">
-                    <a href="logout.php" class="nav-link text-danger">
-                        Logout
-                    </a>
-                </li>
-
-            </ul>
-        </div>
+        <!-- SIDEBAR TERPISAH (Ukuran font dan menu otomatis seragam) -->
+        <?php include 'includes/sidebar.php'; ?>
 
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">

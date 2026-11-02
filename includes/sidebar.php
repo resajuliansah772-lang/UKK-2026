@@ -166,11 +166,6 @@
             </a>
         </li>
 
-        <li class="nav-item mb-2">
-            <a href="laporan.php"
-               class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                Laporan
-            </a>
         </li>
 
         <li class="nav-item mb-2">

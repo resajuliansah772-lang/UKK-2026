@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -159,26 +158,91 @@ $tahun = mysqli_query(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Edit Wali Kelas</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Edit Data Wali Kelas</h5>
+<div class="container-fluid">
+    <div class="row">
+
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100 sidebar">
+            <h4 class="text-white mb-4">
+                Pelanggaran Siswa
+            </h4>
+
+            <ul class="nav nav-pills flex-column">
+                <li class="nav-item mb-2">
+                    <a href="dashboard.php" class="nav-link text-white">Dashboard</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="data_siswa.php" class="nav-link text-white">Data Siswa</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="data_guru.php" class="nav-link text-white">Data Guru</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="kelas.php" class="nav-link text-white">Kelas</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="tahun_ajaran.php" class="nav-link text-white">Tahun Ajaran</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="penepatan_siswa.php" class="nav-link text-white">Penepatan Siswa</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="wali_kelas.php" class="nav-link active" aria-current="page">Wali Kelas</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="kategori_pelanggaran.php" class="nav-link text-white">Kategori Pelanggaran</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="jenis_pelanggaran.php" class="nav-link text-white">Jenis Pelanggaran</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="laporan.php" class="nav-link text-white">Laporan</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="aboutme.php" class="nav-link text-white">About Me</a>
+                </li>
+                <hr class="text-secondary">
+                <li class="nav-item">
+                    <a href="logout.php" class="nav-link text-danger">Logout</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- KONTEN UTAMA -->
+        <main class="col-md-9 col-lg-10 p-4">
+
+            <h2>Edit Data Wali Kelas</h2>
+            <p class="text-muted">
+                Form perbarui penugasan guru sebagai wali kelas.
+            </p>
+
+            <?php if ($pesan !== ''): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <?= aman($pesan) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            <?php endif; ?>
 
-                <div class="card-body">
-                    <?php if ($pesan !== ''): ?>
-                        <div class="alert alert-danger">
-                            <?= aman($pesan) ?>
-                        </div>
-                    <?php endif; ?>
+            <!-- FORM CARD -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
 
                     <form method="POST">
+
                         <div class="mb-3">
                             <label class="form-label">Nama Guru</label>
                             <select name="guru_id" class="form-select" required>
@@ -236,7 +300,7 @@ $tahun = mysqli_query(
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label class="form-label">Status</label>
                             <select name="status_aktif" class="form-select" required>
                                 <option value="1" <?= (int) $data['status_aktif'] === 1 ? 'selected' : '' ?>>
@@ -248,14 +312,23 @@ $tahun = mysqli_query(
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                        <a href="wali_kelas.php" class="btn btn-secondary">Kembali</a>
+                        <div class="d-flex gap-2">
+                            <a href="wali_kelas.php" class="btn btn-secondary">Kembali</a>
+                            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        </div>
+
                     </form>
+
                 </div>
             </div>
-        </div>
+
+        </main>
+
     </div>
 </div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
