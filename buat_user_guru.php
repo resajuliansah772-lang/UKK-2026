@@ -1,5 +1,5 @@
 <?php
-//buat_user_admin.php
+//buat_user_guru.php
 // jalankan file ini satukali saja lewat browser untuk membuat user awal
 include 'config/koneksi.php';
 

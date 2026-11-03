@@ -1,141 +1,153 @@
+
 <?php
 session_start();
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
+// Role pengguna
+$role = strtolower(trim($_SESSION['role'] ?? ''));
+
+// Penanda halaman aktif
 $halaman = 'laporan';
 
-// Mengambil data laporan pelanggaran
-$sql = "SELECT * FROM t_pelanggaran_siswa ORDER BY id DESC";
+// Mengambil nama kolom tabel secara otomatis
+function cariKolomLaporan($koneksi, $tabel, $pilihan) {
+    $hasil = mysqli_query($koneksi, "SHOW COLUMNS FROM `$tabel`");
+
+    if (!$hasil) {
+        return null;
+    }
+
+    $kolomTersedia = [];
+
+    while ($data = mysqli_fetch_assoc($hasil)) {
+        $kolomTersedia[] = $data['Field'];
+    }
+
+    foreach ($pilihan as $kolom) {
+        if (in_array($kolom, $kolomTersedia)) {
+            return $kolom;
+        }
+    }
+
+    return null;
+}
+
+// Periksa tabel yang digunakan
+$tabel = 't_pelanggaran_siswa';
+
+$cekTabel = mysqli_query($koneksi, "SHOW TABLES LIKE '$tabel'");
+
+if (!$cekTabel || mysqli_num_rows($cekTabel) == 0) {
+    die("Tabel t_pelanggaran_siswa tidak ditemukan. Periksa nama tabel database.");
+}
+
+// Cari nama kolom yang tersedia
+$kolomSiswa = cariKolomLaporan(
+    $koneksi,
+    $tabel,
+    ['siswa_id', 'id_siswa']
+);
+
+$kolomPelanggaran = cariKolomLaporan(
+    $koneksi,
+    $tabel,
+    ['pelanggaran_id', 'id_pelanggaran', 'jenis_pelanggaran_id']
+);
+
+$kolomTanggal = cariKolomLaporan(
+    $koneksi,
+    $tabel,
+    ['tanggal', 'tanggal_pelanggaran', 'created_at']
+);
+
+$kolomKeterangan = cariKolomLaporan(
+    $koneksi,
+    $tabel,
+    ['keterangan', 'catatan', 'deskripsi']
+);
+
+// Pastikan kolom relasi tersedia
+if (!$kolomSiswa || !$kolomPelanggaran || !$kolomTanggal) {
+    die("Kolom relasi siswa, pelanggaran, atau tanggal tidak ditemukan. Periksa struktur tabel t_pelanggaran_siswa.");
+}
+
+// Keterangan boleh tidak tersedia
+$kolomKeteranganSQL = $kolomKeterangan
+    ? "ps.`$kolomKeterangan`"
+    : "''";
+
+// Query laporan
+$sql = "
+    SELECT
+        ps.id,
+        ps.`$kolomTanggal` AS tanggal,
+        s.nama AS nama_siswa,
+        p.nama AS nama_pelanggaran,
+        p.poin AS poin,
+        $kolomKeteranganSQL AS keterangan
+    FROM t_pelanggaran_siswa ps
+    LEFT JOIN t_siswa s
+        ON ps.`$kolomSiswa` = s.id
+    LEFT JOIN t_pelanggaran p
+        ON ps.`$kolomPelanggaran` = p.id
+    ORDER BY ps.`$kolomTanggal` DESC
+";
+
 $query = mysqli_query($koneksi, $sql);
 
 if (!$query) {
-    die("Gagal mengambil data laporan: " . mysqli_error($koneksi));
+    die("Gagal mengambil laporan: " . mysqli_error($koneksi));
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Laporan Pelanggaran</title>
 
     <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
+
+    <!-- DataTables -->
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css"
+          rel="stylesheet">
+
+    <style>
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        #tabelLaporan th,
+        #tabelLaporan td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .dataTables_wrapper {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container-fluid">
     <div class="row">
 
-        <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
-
-            <h4 class="text-white mb-4">
-                Pelanggaran Siswa
-            </h4>
-
-            <?php if (isset($_SESSION['role']) &&
-                      $_SESSION['role'] == 'admin') { ?>
-
-            <ul class="nav nav-pills flex-column">
-
-                <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link text-white">
-                        Dashboard
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="data_siswa.php"
-                       class="nav-link text-white">
-                        Data Siswa
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="data_guru.php"
-                       class="nav-link text-white">
-                        Data Guru
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="kelas.php"
-                       class="nav-link text-white">
-                        Kelas
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="tahun_ajaran.php"
-                       class="nav-link text-white">
-                        Tahun Ajaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="penepatan_siswa.php"
-                       class="nav-link text-white">
-                        Penepatan Siswa
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="wali_kelas.php"
-                       class="nav-link text-white">
-                        Wali Kelas
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="kategori_pelanggaran.php"
-                       class="nav-link text-white">
-                        Kategori Pelanggaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php"
-                       class="nav-link text-white">
-                        Jenis Pelanggaran
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link active"
-                       aria-current="page">
-                        Laporan
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a href="aboutme.php"
-                       class="nav-link text-white">
-                        About Me
-                    </a>
-                </li>
-
-                <hr class="text-secondary">
-
-                <li class="nav-item">
-                    <a href="logout.php"
-                       class="nav-link text-danger">
-                        Logout
-                    </a>
-                </li>
-
-            </ul>
-
-            <?php } ?>
-
-        </div>
+        <!-- SIDEBAR SESUAI ROLE -->
+        <?php include "includes/sidebar.php"; ?>
 
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
@@ -146,22 +158,42 @@ if (!$query) {
                 Rekapitulasi catatan pelanggaran siswa.
             </p>
 
-            <!-- Tombol cetak -->
+            <?php if ($role == 'admin') { ?>
+
+                <div class="alert alert-primary">
+                    Anda login sebagai Admin. Berikut seluruh laporan pelanggaran siswa.
+                </div>
+
+            <?php } elseif ($role == 'guru') { ?>
+
+                <div class="alert alert-info">
+                    Anda login sebagai Guru. Berikut laporan pelanggaran siswa.
+                </div>
+
+            <?php } elseif ($role == 'petugas') { ?>
+
+                <div class="alert alert-info">
+                    Anda login sebagai Petugas. Berikut laporan pelanggaran siswa.
+                </div>
+
+            <?php } ?>
+
+            <!-- TOMBOL CETAK -->
             <div class="mb-3">
-                <button type="button"
-                        onclick="window.print()"
-                        class="btn btn-success">
+                <button onclick="window.print()" class="btn btn-success">
                     Cetak / Print Laporan
                 </button>
             </div>
 
             <!-- TABEL LAPORAN -->
-            <div class="card">
+            <div class="card shadow-sm">
+
                 <div class="card-body">
 
                     <div class="table-responsive">
 
-                        <table class="table table-bordered table-striped table-hover align-middle">
+                        <table id="tabelLaporan"
+                               class="table table-bordered table-striped table-hover w-100">
 
                             <thead class="table-dark">
                                 <tr>
@@ -175,64 +207,51 @@ if (!$query) {
                             </thead>
 
                             <tbody>
-                            <?php
-                            $no = 1;
 
-                            if (mysqli_num_rows($query) > 0) {
+                                <?php
+                                $no = 1;
+
                                 while ($row = mysqli_fetch_assoc($query)) {
-                            ?>
+                                ?>
+
                                 <tr>
+
                                     <td><?= $no++; ?></td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['tanggal'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['tanggal'] ?? '-'); ?>
                                     </td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['nama_siswa'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['nama_siswa'] ?? '-'); ?>
                                     </td>
 
                                     <td>
-                                        <?= htmlspecialchars(
-                                            $row['nama_pelanggaran'] ?? '-'
-                                        ); ?>
+                                        <?= htmlspecialchars($row['nama_pelanggaran'] ?? '-'); ?>
                                     </td>
 
-                                    <td>
+                                    <td class="text-center">
                                         <span class="badge bg-danger">
-                                            <?= htmlspecialchars(
-                                                (string)($row['poin'] ?? 0)
-                                            ); ?>
+                                            <?= (int)($row['poin'] ?? 0); ?>
                                         </span>
                                     </td>
 
                                     <td>
-                                        <?= nl2br(htmlspecialchars(
-                                            $row['keterangan'] ?? '-'
-                                        )); ?>
+                                        <?= htmlspecialchars($row['keterangan'] ?? '-'); ?>
                                     </td>
+
                                 </tr>
 
-                            <?php
-                                }
-                            } else {
-                            ?>
-                                <tr>
-                                    <td colspan="6" class="text-center">
-                                        Belum ada data laporan pelanggaran.
-                                    </td>
-                                </tr>
-                            <?php } ?>
+                                <?php } ?>
+
                             </tbody>
 
                         </table>
 
                     </div>
+
                 </div>
+
             </div>
 
         </main>
@@ -240,30 +259,63 @@ if (!$query) {
     </div>
 </div>
 
-<!-- Pengaturan cetak -->
-<style>
-@media print {
-    .col-md-3,
-    .btn-success {
-        display: none !important;
-    }
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    .col-md-9 {
-        width: 100% !important;
-    }
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    main {
-        width: 100% !important;
-        padding: 0 !important;
-    }
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 
-    body {
-        background: white !important;
-    }
-}
-</style>
+<!-- DataTables Bahasa Indonesia -->
+<script>
+$(document).ready(function () {
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    $('#tabelLaporan').DataTable({
+
+        pageLength: 10,
+
+        lengthMenu: [5, 10, 25, 50, 100],
+
+        searching: true,
+
+        ordering: true,
+
+        paging: true,
+
+        info: true,
+
+        columnDefs: [
+            {
+                targets: [0],
+                orderable: false,
+                searchable: false
+            }
+        ],
+
+        language: {
+            search: "Cari data:",
+            lengthMenu: "Tampilkan _MENU_ data",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            infoEmpty: "Tidak ada data laporan",
+            infoFiltered: "(difilter dari _MAX_ total data)",
+            zeroRecords: "Data tidak ditemukan",
+            emptyTable: "Belum ada laporan pelanggaran",
+
+            paginate: {
+                first: "Pertama",
+                last: "Terakhir",
+                next: "Selanjutnya",
+                previous: "Sebelumnya"
+            }
+        }
+
+    });
+
+});
+</script>
 
 </body>
 </html>
