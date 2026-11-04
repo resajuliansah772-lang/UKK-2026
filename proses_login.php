@@ -4,17 +4,77 @@ session_start();
 
 include "config/koneksi.php";
 
-$email = $_POST['email'];
-$password = $_POST['password'];
+// Pastikan form dikirim menggunakan POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: login.php");
+    exit;
+}
 
-$query = mysqli_query($koneksi, "SELECT * FROM t_users WHERE email = '$email'");
+// Ambil data login
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
 
-$data = mysqli_fetch_assoc($query);
+// Validasi input
+if ($email === '' || $password === '') {
+    header("Location: login.php?pesan=gagal");
+    exit;
+}
 
+// Cari akun berdasarkan email
+$stmt = mysqli_prepare(
+    $koneksi,
+    "SELECT * FROM t_users WHERE email = ? LIMIT 1"
+);
+
+mysqli_stmt_bind_param($stmt, "s", $email);
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+$data = mysqli_fetch_assoc($result);
+
+mysqli_stmt_close($stmt);
+
+// Periksa akun
 if ($data) {
 
-    // Pengecekan password: bisa mendeteksi password yang di-hash ATAU teks biasa
-    if (password_verify($password, $data['password']) || $password == $data['password']) {
+    $password_db = $data['password'];
+
+    // Verifikasi password yang sudah di-hash
+    $password_cocok = password_verify($password, $password_db);
+
+    // Mendukung password lama yang masih berupa teks biasa
+    if (!$password_cocok && $password_db !== null) {
+        $password_cocok = hash_equals($password_db, $password);
+    }
+
+    if ($password_cocok) {
+
+        // Jika password masih teks biasa, ubah menjadi hash
+        if (!password_verify($password, $password_db)) {
+
+            $password_baru = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            $update = mysqli_prepare(
+                $koneksi,
+                "UPDATE t_users SET password = ? WHERE id = ?"
+            );
+
+            mysqli_stmt_bind_param(
+                $update,
+                "si",
+                $password_baru,
+                $data['id']
+            );
+
+            mysqli_stmt_execute($update);
+            mysqli_stmt_close($update);
+        }
+
+        // Simpan session
+        session_regenerate_id(true);
 
         $_SESSION['login'] = true;
         $_SESSION['id'] = $data['id'];
@@ -22,6 +82,7 @@ if ($data) {
         $_SESSION['email'] = $data['email'];
         $_SESSION['role'] = $data['role'];
 
+        // Arahkan ke dashboard
         header("Location: dashboard.php");
         exit;
 

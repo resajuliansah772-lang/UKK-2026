@@ -6,6 +6,8 @@ include "config/koneksi.php";
 
 // Penanda halaman aktif
 $halaman = 'jenis_pelanggaran';
+$namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
+$roleUser = $_SESSION['role'] ?? 'guru';
 
 // Memeriksa struktur tabel
 $hasil_kolom = mysqli_query($koneksi, "SHOW COLUMNS FROM t_pelanggaran");
@@ -68,10 +70,14 @@ if (!$query) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Jenis Pelanggaran</title>
+    <title>Jenis Pelanggaran - Sistem Informasi Pelanggaran Siswa</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Bootstrap Icons CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
           rel="stylesheet">
 
     <!-- DataTables CSS -->
@@ -79,13 +85,16 @@ if (!$query) {
           rel="stylesheet">
 
     <style>
+        body { background-color: #f4f6f9; }
         .nav-link {
             transition: all 0.3s ease;
+            border-radius: 6px;
         }
 
-        .nav-link:hover {
+        .nav-link:hover, .nav-link.active {
             background-color: #0d6efd !important;
             color: white !important;
+            padding-left: 15px;
         }
 
         #tabelJenis th,
@@ -96,6 +105,9 @@ if (!$query) {
         .dataTables_wrapper {
             margin-top: 10px;
         }
+
+        .card { border: none; border-radius: 12px; }
+        .sidebar { background: linear-gradient(180deg, #212529 0%, #1a1e21 100%); }
 
         @media print {
             .sidebar,
@@ -121,87 +133,87 @@ if (!$query) {
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100 sidebar">
+        <div class="col-md-3 col-lg-2 sidebar p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">
-                Pelanggaran Siswa
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i> Pelanggaran Siswa
             </h4>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php" class="nav-link text-white">
-                        Dashboard
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php" class="nav-link text-white">
-                        Data Siswa
+                        <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_guru.php" class="nav-link text-white">
-                        Data Guru
+                        <i class="bi bi-person-badge me-2"></i> Data Guru
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php" class="nav-link text-white">
-                        Kelas
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tahun_ajaran.php" class="nav-link text-white">
-                        Tahun Ajaran
+                        <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="penempatan_siswa.php" class="nav-link text-white">
-                        Penepatan Siswa
+                        <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="wali_kelas.php" class="nav-link text-white">
-                        Wali Kelas
+                        <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kategori_pelanggaran.php" class="nav-link text-white">
-                        Kategori Pelanggaran
+                        <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="jenis_pelanggaran.php"
                        class="nav-link active"
                        aria-current="page">
-                        Jenis Pelanggaran
+                        <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php" class="nav-link text-white">
-                        Laporan
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="aboutme.php" class="nav-link text-white">
-                        About Me
+                        <i class="bi bi-info-circle me-2"></i> About Me
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -211,150 +223,149 @@ if (!$query) {
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <h2>Jenis Pelanggaran</h2>
+            <div class="card shadow-sm p-4 bg-white">
 
-            <p class="text-muted">
-                Kelola data jenis pelanggaran siswa.
-            </p>
+                <h2>Jenis Pelanggaran</h2>
 
-            <!-- TOMBOL TAMBAH -->
-            <div class="mb-3 no-print">
-                <a href="tambah_jenis_pelanggaran.php"
-                   class="btn btn-primary">
-                    + Tambah Jenis Pelanggaran
-                </a>
-            </div>
+                <p class="text-muted">
+                    Kelola data jenis pelanggaran siswa.
+                </p>
 
-            <!-- TABEL JENIS PELANGGARAN -->
-            <div class="card shadow-sm">
-                <div class="card-body">
+                <!-- TOMBOL TAMBAH -->
+                <div class="mb-3 no-print">
+                    <a href="tambah_jenis_pelanggaran.php"
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Jenis Pelanggaran
+                    </a>
+                </div>
 
-                    <div class="table-responsive">
+                <!-- TABEL JENIS PELANGGARAN -->
+                <div class="table-responsive">
 
-                        <table id="tabelJenis"
-                               class="table table-bordered table-striped table-hover w-100">
+                    <table id="tabelJenis"
+                           class="table table-bordered table-striped table-hover w-100 align-middle">
 
-                            <thead class="table-dark">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Jenis Pelanggaran</th>
+
+                                <?php if ($kolom_kategori) { ?>
+                                    <th>Kategori ID</th>
+                                <?php } ?>
+
+                                <?php if ($kolom_poin) { ?>
+                                    <th>Poin</th>
+                                <?php } ?>
+
+                                <?php if ($kolom_deskripsi) { ?>
+                                    <th>Deskripsi</th>
+                                <?php } ?>
+
+                                <?php if ($kolom_status) { ?>
+                                    <th>Status</th>
+                                <?php } ?>
+
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <?php
+                            $no = 1;
+
+                            while ($row = mysqli_fetch_assoc($query)) {
+                            ?>
                                 <tr>
-                                    <th>No</th>
-                                    <th>Nama Jenis Pelanggaran</th>
+                                    <td><?= $no++; ?></td>
+
+                                    <td>
+                                        <?= htmlspecialchars(
+                                            (string) (
+                                                $kolom_nama
+                                                    ? ($row[$kolom_nama] ?? '-')
+                                                    : '-'
+                                            )
+                                        ); ?>
+                                    </td>
 
                                     <?php if ($kolom_kategori) { ?>
-                                        <th>Kategori ID</th>
+                                        <td>
+                                            <?= htmlspecialchars(
+                                                (string) ($row[$kolom_kategori] ?? '-')
+                                            ); ?>
+                                        </td>
                                     <?php } ?>
 
                                     <?php if ($kolom_poin) { ?>
-                                        <th>Poin</th>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                <?= htmlspecialchars(
+                                                    (string) ($row[$kolom_poin] ?? 0)
+                                                ) ?>
+                                            </span>
+                                        </td>
                                     <?php } ?>
 
                                     <?php if ($kolom_deskripsi) { ?>
-                                        <th>Deskripsi</th>
+                                        <td>
+                                            <?= nl2br(htmlspecialchars(
+                                                (string) ($row[$kolom_deskripsi] ?? '-')
+                                            )); ?>
+                                        </td>
                                     <?php } ?>
 
                                     <?php if ($kolom_status) { ?>
-                                        <th>Status</th>
+                                        <td>
+                                            <?php
+                                            $status = $row[$kolom_status] ?? 0;
+
+                                            if (
+                                                $kolom_status === 'status'
+                                                && !is_numeric($status)
+                                            ) {
+                                                $aktif = strtolower((string)$status) === 'aktif';
+                                            } else {
+                                                $aktif = (int)$status === 1;
+                                            }
+                                            ?>
+
+                                            <?php if ($aktif) { ?>
+                                                <span class="badge bg-success">
+                                                    Aktif
+                                                </span>
+                                            <?php } else { ?>
+                                                <span class="badge bg-secondary">
+                                                    Tidak Aktif
+                                                </span>
+                                            <?php } ?>
+                                        </td>
                                     <?php } ?>
 
-                                    <th>Aksi</th>
+                                    <td>
+                                        <div class="d-flex gap-1">
+
+                                            <a href="edit_jenis_pelanggaran.php?id=<?= (int)$row['id']; ?>"
+                                               class="btn btn-warning btn-sm">
+                                                Edit
+                                            </a>
+
+                                            <a href="hapus_jenis_pelanggaran.php?id=<?= (int)$row['id']; ?>"
+                                               class="btn btn-danger btn-sm"
+                                               onclick="return confirm('Yakin ingin menghapus jenis pelanggaran ini?');">
+                                                Hapus
+                                            </a>
+
+                                        </div>
+                                    </td>
                                 </tr>
-                            </thead>
+                            <?php } ?>
+                        </tbody>
 
-                            <tbody>
-                                <?php
-                                $no = 1;
+                    </table>
 
-                                while ($row = mysqli_fetch_assoc($query)) {
-                                ?>
-                                    <tr>
-                                        <td><?= $no++; ?></td>
-
-                                        <td>
-                                            <?= htmlspecialchars(
-                                                (string) (
-                                                    $kolom_nama
-                                                        ? ($row[$kolom_nama] ?? '-')
-                                                        : '-'
-                                                )
-                                            ); ?>
-                                        </td>
-
-                                        <?php if ($kolom_kategori) { ?>
-                                            <td>
-                                                <?= htmlspecialchars(
-                                                    (string) ($row[$kolom_kategori] ?? '-')
-                                                ); ?>
-                                            </td>
-                                        <?php } ?>
-
-                                        <?php if ($kolom_poin) { ?>
-                                            <td>
-                                                <span class="badge bg-danger">
-                                                    <?= htmlspecialchars(
-                                                        (string) ($row[$kolom_poin] ?? 0)
-                                                    ) ?>
-                                                </span>
-                                            </td>
-                                        <?php } ?>
-
-                                        <?php if ($kolom_deskripsi) { ?>
-                                            <td>
-                                                <?= nl2br(htmlspecialchars(
-                                                    (string) ($row[$kolom_deskripsi] ?? '-')
-                                                )); ?>
-                                            </td>
-                                        <?php } ?>
-
-                                        <?php if ($kolom_status) { ?>
-                                            <td>
-                                                <?php
-                                                $status = $row[$kolom_status] ?? 0;
-
-                                                if (
-                                                    $kolom_status === 'status'
-                                                    && !is_numeric($status)
-                                                ) {
-                                                    $aktif = strtolower((string)$status) === 'aktif';
-                                                } else {
-                                                    $aktif = (int)$status === 1;
-                                                }
-                                                ?>
-
-                                                <?php if ($aktif) { ?>
-                                                    <span class="badge bg-success">
-                                                        Aktif
-                                                    </span>
-                                                <?php } else { ?>
-                                                    <span class="badge bg-secondary">
-                                                        Tidak Aktif
-                                                    </span>
-                                                <?php } ?>
-                                            </td>
-                                        <?php } ?>
-
-                                        <td>
-                                            <div class="d-flex gap-1">
-
-                                                <a href="edit_jenis_pelanggaran.php?id=<?= (int)$row['id']; ?>"
-                                                   class="btn btn-warning btn-sm">
-                                                    Edit
-                                                </a>
-
-                                                <a href="hapus_jenis_pelanggaran.php?id=<?= (int)$row['id']; ?>"
-                                                   class="btn btn-danger btn-sm"
-                                                   onclick="return confirm('Yakin ingin menghapus jenis pelanggaran ini?');">
-                                                    Hapus
-                                                </a>
-
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            </tbody>
-
-                        </table>
-
-                    </div>
                 </div>
+
             </div>
 
         </main>

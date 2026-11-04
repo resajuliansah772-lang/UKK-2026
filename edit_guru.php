@@ -5,26 +5,30 @@ session_start();
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Set variabel halaman aktif untuk guru
+// Set halaman aktif
 $halaman = 'guru';
 
 // Ambil ID
 $id = $_GET['id'] ?? '';
 
-// Ambil data guru
-$sql = "SELECT * FROM t_guru WHERE id = '$id'";
-$query = mysqli_query($koneksi, $sql);
-
-if (!$query) {
-    die("Query gagal: " . mysqli_error($koneksi));
-}
-
-if (mysqli_num_rows($query) == 0) {
-    echo "Data guru tidak ditemukan.";
+if ($id === '' || !ctype_digit((string)$id)) {
+    header("Location: data_guru.php");
     exit;
 }
 
+// Ambil data guru
+$stmt = mysqli_prepare($koneksi, "SELECT * FROM t_guru WHERE id = ?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
+
+$query = mysqli_stmt_get_result($stmt);
 $guru = mysqli_fetch_assoc($query);
+
+mysqli_stmt_close($stmt);
+
+if (!$guru) {
+    die("Data guru tidak ditemukan.");
+}
 
 ?>
 
@@ -32,105 +36,97 @@ $guru = mysqli_fetch_assoc($query);
 <html lang="id">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Edit Data Guru</title>
 
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
 
 <body class="bg-light">
 
 <div class="container-fluid">
+
     <div class="row">
 
-        <!-- SIDEBAR (Menggunakan struktur kode Bootstrap persis sama) -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
 
             <h4 class="text-white mb-4">
                 Pelanggaran Siswa
             </h4>
 
-            <!-- MENU UNTUK ADMIN -->
+            <!-- MENU ADMIN -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') { ?>
 
             <ul class="nav nav-pills flex-column">
 
                 <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
+                    <a href="dashboard.php" class="nav-link text-white">
                         Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="data_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'siswa') ? 'active' : 'text-white'; ?>">
+                    <a href="data_siswa.php" class="nav-link text-white">
                         Data Siswa
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="data_guru.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'guru') ? 'active' : 'text-white'; ?>">
+                    <a href="data_guru.php" class="nav-link active">
                         Data Guru
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
+                    <a href="kelas.php" class="nav-link text-white">
                         Kelas
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="tahun_ajaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">
+                    <a href="tahun_ajaran.php" class="nav-link text-white">
                         Tahun Ajaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="penempatan_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
+                    <a href="penempatan_siswa.php" class="nav-link text-white">
                         Penepatan Siswa
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="wali_kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'wali_kelas') ? 'active' : 'text-white'; ?>">
+                    <a href="wali_kelas.php" class="nav-link text-white">
                         Wali Kelas
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="kategori_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
+                    <a href="kategori_pelanggaran.php" class="nav-link text-white">
                         Kategori Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
+                    <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         Jenis Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
+                    <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>
                 </li>
 
-
                 <li class="nav-item mb-2">
-                    <a href="aboutme.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'about') ? 'active' : 'text-white'; ?>">
+                    <a href="aboutme.php" class="nav-link text-white">
                         About Me
                     </a>
                 </li>
@@ -148,28 +144,25 @@ $guru = mysqli_fetch_assoc($query);
             <?php } ?>
 
 
-            <!-- MENU UNTUK PETUGAS -->
+            <!-- MENU PETUGAS -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'petugas') { ?>
 
             <ul class="nav nav-pills flex-column">
 
                 <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
+                    <a href="dashboard.php" class="nav-link text-white">
                         Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
+                    <a href="kelas.php" class="nav-link text-white">
                         Kelas
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
+                    <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>
                 </li>
@@ -187,49 +180,43 @@ $guru = mysqli_fetch_assoc($query);
             <?php } ?>
 
 
-            <!-- MENU UNTUK GURU -->
+            <!-- MENU GURU -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'guru') { ?>
 
             <ul class="nav nav-pills flex-column">
 
                 <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
+                    <a href="dashboard.php" class="nav-link text-white">
                         Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="catatan_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
+                    <a href="catatan_pelanggaran.php" class="nav-link text-white">
                         Catatan Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="tindakan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tindakan') ? 'active' : 'text-white'; ?>">
+                    <a href="tindakan.php" class="nav-link text-white">
                         Tindakan
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
+                    <a href="laporan.php" class="nav-link text-white">
                         Laporan
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="Riwayat.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'riwayat') ? 'active' : 'text-white'; ?>">
+                    <a href="Riwayat.php" class="nav-link text-white">
                         Riwayat
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="rekap_poin.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'rekap_poin') ? 'active' : 'text-white'; ?>">
+                    <a href="rekap_poin.php" class="nav-link text-white">
                         Rekap Poin
                     </a>
                 </li>
@@ -249,66 +236,197 @@ $guru = mysqli_fetch_assoc($query);
         </div>
 
 
-        <!-- KONTEN UTAMA DI SEBELAH KANAN -->
+        <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
-            <h2 class="fw-bold mb-1">Edit Data Guru</h2>
-            <p class="text-muted small mb-4">Silakan ubah data guru.</p>
 
-            <!-- KARTU FORM -->
-            <div class="card border-1 border-secondary-subtle shadow-sm p-4 rounded-3 bg-white">
-                <form action="proses_edit_guru.php" method="POST">
+            <h2 class="fw-bold mb-1">
+                Edit Data Guru
+            </h2>
 
-                    <input type="hidden" name="id" value="<?= $guru['id']; ?>">
+            <p class="text-muted small mb-4">
+                Silakan ubah data guru.
+            </p>
 
-                    <!-- NIP -->
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary">NIP</label>
-                        <input type="text" name="nip" class="form-control" maxlength="30" value="<?= htmlspecialchars($guru['nip']); ?>" required>
-                    </div>
 
-                    <!-- Nama Guru -->
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary">Nama Guru</label>
-                        <input type="text" name="nama" class="form-control" maxlength="150" value="<?= htmlspecialchars($guru['nama']); ?>" required>
-                    </div>
+            <div class="card border-1 border-secondary-subtle shadow-sm rounded-3">
 
-                    <!-- Email -->
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary">Email</label>
-                        <input type="email" name="email" class="form-control" maxlength="150" value="<?= htmlspecialchars($guru['email']); ?>" required>
-                    </div>
+                <div class="card-body p-4">
 
-                    <!-- Status -->
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary">Status</label>
-                        <select name="status_aktif" class="form-select" required>
-                            <option value="1" <?= $guru['status_aktif'] == 1 ? 'selected' : ''; ?>>Aktif</option>
-                            <option value="0" <?= $guru['status_aktif'] == 0 ? 'selected' : ''; ?>>Tidak Aktif</option>
-                        </select>
-                    </div>
+                    <form action="proses_edit_guru.php" method="POST">
 
-                    <!-- User ID -->
-                    <div class="mb-4">
-                        <label class="form-label small text-secondary">User ID</label>
-                        <input type="number" name="user_id" class="form-control" value="<?= htmlspecialchars($guru['user_id'] ?? ''); ?>">
-                    </div>
+                        <input
+                            type="hidden"
+                            name="id"
+                            value="<?= htmlspecialchars($guru['id']); ?>"
+                        >
 
-                    <!-- Tombol Batal & Simpan Perubahan -->
-                    <div class="d-flex gap-2">
-                        <a href="data_guru.php" class="btn btn-secondary px-3">Batal</a>
-                        <button type="submit" class="btn btn-primary px-3">Simpan Perubahan</button>
-                    </div>
 
-                </form>
+                        <!-- NIP -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                NIP
+                            </label>
+
+                            <input
+                                type="text"
+                                name="nip"
+                                class="form-control"
+                                placeholder="Masukkan NIP (18 digit)"
+                                value="<?= htmlspecialchars($guru['nip']); ?>"
+                                maxlength="18"
+                                minlength="18"
+                                pattern="[0-9]{18}"
+                                inputmode="numeric"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 18)"
+                                title="NIP harus terdiri dari 18 digit angka"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- NAMA GURU -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Nama Guru
+                            </label>
+
+                            <input
+                                type="text"
+                                name="nama"
+                                class="form-control"
+                                placeholder="Masukkan nama guru"
+                                value="<?= htmlspecialchars($guru['nama']); ?>"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                name="email"
+                                class="form-control"
+                                placeholder="Masukkan email guru"
+                                value="<?= htmlspecialchars($guru['email']); ?>"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- PASSWORD BARU -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Password Baru
+                            </label>
+
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                class="form-control"
+                                placeholder="Kosongkan jika tidak ingin mengganti password"
+                                minlength="6"
+                            >
+
+                            <div class="form-text">
+                                Isi password jika ingin mengganti password akun guru.
+                            </div>
+
+                        </div>
+
+
+                        <!-- KONFIRMASI PASSWORD -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Konfirmasi Password
+                            </label>
+
+                            <input
+                                type="password"
+                                name="konfirmasi_password"
+                                id="konfirmasi_password"
+                                class="form-control"
+                                placeholder="Masukkan ulang password baru"
+                                minlength="6"
+                            >
+
+                        </div>
+
+
+                        <!-- STATUS -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Status
+                            </label>
+
+                            <select
+                                name="status_aktif"
+                                class="form-select"
+                                required
+                            >
+
+                                <option value="1"
+                                    <?= $guru['status_aktif'] == 1 ? 'selected' : ''; ?>>
+                                    Aktif
+                                </option>
+
+                                <option value="0"
+                                    <?= $guru['status_aktif'] == 0 ? 'selected' : ''; ?>>
+                                    Tidak Aktif
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- TOMBOL -->
+                        <div class="d-flex gap-2">
+
+                            <a
+                                href="data_guru.php"
+                                class="btn btn-secondary"
+                            >
+                                Batal
+                            </a>
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                            >
+                                Simpan Perubahan
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
             </div>
+
         </main>
 
     </div>
+
 </div>
 
-<!-- Bootstrap 5 JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
-
 </html>

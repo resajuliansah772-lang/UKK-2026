@@ -11,6 +11,8 @@ include "config/koneksi.php";
 
 // Set halaman aktif
 $halaman = 'siswa';
+$namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
+$roleUser = $_SESSION['role'] ?? 'guru';
 
 // Ambil data siswa aktif
 $sql = "SELECT * FROM t_siswa
@@ -32,10 +34,14 @@ if (!$query) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Data Siswa</title>
+    <title>Data Siswa - Sistem Informasi Pelanggaran Siswa</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- Bootstrap Icons CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
           rel="stylesheet">
 
     <!-- DataTables CSS -->
@@ -43,13 +49,16 @@ if (!$query) {
           rel="stylesheet">
 
     <style>
+        body { background-color: #f4f6f9; }
         .nav-link {
             transition: all 0.3s ease;
+            border-radius: 6px;
         }
 
-        .nav-link:hover {
+        .nav-link:hover, .nav-link.active {
             background-color: #0d6efd !important;
             color: white !important;
+            padding-left: 15px;
         }
 
         #tabelSiswa th,
@@ -64,6 +73,9 @@ if (!$query) {
         .table-responsive {
             width: 100%;
         }
+
+        .card { border: none; border-radius: 12px; }
+        .sidebar { background: linear-gradient(180deg, #212529 0%, #1a1e21 100%); }
     </style>
 </head>
 
@@ -73,101 +85,100 @@ if (!$query) {
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
+        <div class="col-md-3 col-lg-2 sidebar min-vh-100 p-3">
 
-            <h4 class="text-white mb-4">
-                Pelanggaran Siswa
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i> Pelanggaran Siswa
             </h4>
 
             <!-- MENU ADMIN -->
             <?php if ($_SESSION['role'] == 'admin') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
                        class="nav-link text-white">
-                        Dashboard
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php"
                        class="nav-link active">
-                        Data Siswa
+                        <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_guru.php"
                        class="nav-link text-white">
-                        Data Guru
+                        <i class="bi bi-person-badge me-2"></i> Data Guru
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php"
                        class="nav-link text-white">
-                        Kelas
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tahun_ajaran.php"
                        class="nav-link text-white">
-                        Tahun Ajaran
+                        <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="penepatan_siswa.php"
                        class="nav-link text-white">
-                        Penepatan Siswa
+                        <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="wali_kelas.php"
                        class="nav-link text-white">
-                        Wali Kelas
+                        <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kategori_pelanggaran.php"
                        class="nav-link text-white">
-                        Kategori Pelanggaran
+                        <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="jenis_pelanggaran.php"
                        class="nav-link text-white">
-                        Jenis Pelanggaran
+                        <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php"
                        class="nav-link text-white">
-                        Laporan
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="aboutme.php"
                        class="nav-link text-white">
-                        About Me
+                        <i class="bi bi-info-circle me-2"></i> About Me
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php"
                        class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -179,35 +190,35 @@ if (!$query) {
             <!-- MENU PETUGAS -->
             <?php if ($_SESSION['role'] == 'petugas') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
                        class="nav-link text-white">
-                        Dashboard
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php"
                        class="nav-link text-white">
-                        Kelas
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php"
                        class="nav-link text-white">
-                        Laporan
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php"
                        class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -219,35 +230,35 @@ if (!$query) {
             <!-- MENU GURU -->
             <?php if ($_SESSION['role'] == 'guru') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
                        class="nav-link text-white">
-                        Dashboard
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php"
                        class="nav-link active">
-                        Data Siswa
+                        <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php"
                        class="nav-link text-white">
-                        Kelas
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php"
                        class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -261,131 +272,135 @@ if (!$query) {
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <h2>Data Siswa</h2>
+            <div class="card shadow-sm p-4 bg-white">
 
-            <p>
-                Data siswa pada sistem pelanggaran siswa
-            </p>
+                <h2>Data Siswa</h2>
 
-            <!-- TOMBOL TAMBAH -->
-            <?php if ($_SESSION['role'] == 'admin') { ?>
-            <div class="mb-3">
-                <a href="tambah_siswa.php"
-                   class="btn btn-primary">
-                    Tambah Siswa
-                </a>
-            </div>
-            <?php } ?>
+                <p class="text-muted">
+                    Data siswa pada sistem pelanggaran siswa
+                </p>
+
+                <!-- TOMBOL TAMBAH -->
+                <?php if ($_SESSION['role'] == 'admin') { ?>
+                <div class="mb-3">
+                    <a href="tambah_siswa.php"
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Siswa
+                    </a>
+                </div>
+                <?php } ?>
 
 
-            <!-- TABEL DATATABLES -->
-            <div class="table-responsive">
+                <!-- TABEL DATATABLES -->
+                <div class="table-responsive">
 
-                <table id="tabelSiswa"
-                       class="table table-bordered table-striped table-hover w-100">
+                    <table id="tabelSiswa"
+                           class="table table-bordered table-striped table-hover w-100 align-middle">
 
-                    <thead class="table-dark">
+                        <thead class="table-dark">
 
-                        <tr>
-                            <th>No</th>
-                            <th>NIS</th>
-                            <th>NISN</th>
-                            <th>Nama</th>
-                            <th>Jenis Kelamin</th>
-                            <th>Tanggal Lahir</th>
-                            <th>Alamat</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
+                            <tr>
+                                <th>No</th>
+                                <th>NIS</th>
+                                <th>NISN</th>
+                                <th>Nama</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Tanggal Lahir</th>
+                                <th>Alamat</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
 
-                    </thead>
+                        </thead>
 
-                    <tbody>
+                        <tbody>
 
-                    <?php
-                    $no = 1;
+                        <?php
+                        $no = 1;
 
-                    while ($siswa = mysqli_fetch_assoc($query)) {
-                    ?>
+                        while ($siswa = mysqli_fetch_assoc($query)) {
+                        ?>
 
-                        <tr>
+                            <tr>
 
-                            <td>
-                                <?= $no++; ?>
-                            </td>
+                                <td>
+                                    <?= $no++; ?>
+                                </td>
 
-                            <td>
-                                <?= htmlspecialchars($siswa['nis'] ?? ''); ?>
-                            </td>
+                                <td>
+                                    <?= htmlspecialchars($siswa['nis'] ?? ''); ?>
+                                </td>
 
-                            <td>
-                                <?= htmlspecialchars($siswa['nisn'] ?? ''); ?>
-                            </td>
+                                <td>
+                                    <?= htmlspecialchars($siswa['nisn'] ?? ''); ?>
+                                </td>
 
-                            <td>
-                                <?= htmlspecialchars($siswa['nama'] ?? ''); ?>
-                            </td>
+                                <td>
+                                    <?= htmlspecialchars($siswa['nama'] ?? ''); ?>
+                                </td>
 
-                            <td>
-                                <?php
-                                if (($siswa['jenis_kelamin'] ?? '') == 'L') {
-                                    echo "Laki-laki";
-                                } elseif (($siswa['jenis_kelamin'] ?? '') == 'P') {
-                                    echo "Perempuan";
-                                } else {
-                                    echo "-";
-                                }
-                                ?>
-                            </td>
+                                <td>
+                                    <?php
+                                    if (($siswa['jenis_kelamin'] ?? '') == 'L') {
+                                        echo "Laki-laki";
+                                    } elseif (($siswa['jenis_kelamin'] ?? '') == 'P') {
+                                        echo "Perempuan";
+                                    } else {
+                                        echo "-";
+                                    }
+                                    ?>
+                                </td>
 
-                            <td>
-                                <?= htmlspecialchars($siswa['tanggal_lahir'] ?? ''); ?>
-                            </td>
+                                <td>
+                                    <?= htmlspecialchars($siswa['tanggal_lahir'] ?? ''); ?>
+                                </td>
 
-                            <td>
-                                <?= htmlspecialchars($siswa['alamat'] ?? ''); ?>
-                            </td>
+                                <td>
+                                    <?= htmlspecialchars($siswa['alamat'] ?? ''); ?>
+                                </td>
 
-                            <td>
-                                <span class="badge text-bg-success">
-                                    Aktif
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="badge text-bg-success">
+                                        Aktif
+                                    </span>
+                                </td>
 
-                            <td>
-                                <div class="d-flex gap-1">
+                                <td>
+                                    <div class="d-flex gap-1">
 
-                                    <?php if ($_SESSION['role'] == 'admin') { ?>
+                                        <?php if ($_SESSION['role'] == 'admin') { ?>
 
-                                    <a
-                                        href="edit_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
-                                        class="btn btn-warning btn-sm">
-                                        Edit
-                                    </a>
+                                        <a
+                                            href="edit_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
+                                            class="btn btn-warning btn-sm">
+                                            Edit
+                                        </a>
 
-                                    <a
-                                        href="hapus_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
-                                        class="btn btn-danger btn-sm"
-                                        onclick="return confirm('Yakin ingin menonaktifkan siswa ini?');">
-                                        Hapus
-                                    </a>
+                                        <a
+                                            href="hapus_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
+                                            class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Yakin ingin menonaktifkan siswa ini?');">
+                                            Hapus
+                                        </a>
 
-                                    <?php } else { ?>
+                                        <?php } else { ?>
 
-                                    <span class="text-muted">-</span>
+                                        <span class="text-muted">-</span>
 
-                                    <?php } ?>
+                                        <?php } ?>
 
-                                </div>
-                            </td>
+                                    </div>
+                                </td>
 
-                        </tr>
+                            </tr>
 
-                    <?php } ?>
+                        <?php } ?>
 
-                    </tbody>
+                        </tbody>
 
-                </table>
+                    </table>
+
+                </div>
 
             </div>
 

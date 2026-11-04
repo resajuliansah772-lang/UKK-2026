@@ -13,7 +13,8 @@ if (isset($_POST['simpan'])) {
     $deskripsi     = mysqli_real_escape_string($koneksi, $_POST['deskripsi']);
     $status        = mysqli_real_escape_string($koneksi, $_POST['status']);
 
-    $query = "INSERT INTO kategori_pelanggaran (nama_kategori, deskripsi, status) 
+    // ✅ SUDAH SESUAI PERSIS DENGAN TABEL DI DATABASE
+    $query = "INSERT INTO t_pelanggaran_kategori (nama, deskripsi, status_aktif) 
               VALUES ('$nama_kategori', '$deskripsi', '$status')";
 
     if (mysqli_query($koneksi, $query)) {
@@ -93,7 +94,7 @@ if (isset($_POST['simpan'])) {
                 <li class="nav-item mb-2">
                     <a href="penempatan_siswa.php"
                        class="nav-link <?php echo (isset($halaman) && $halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
-                        Penepatan Siswa
+                        Penempatan Siswa
                     </a>
                 </li>
 
@@ -218,7 +219,7 @@ if (isset($_POST['simpan'])) {
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="Riwayat.php"
+                    <a href="riwayat.php"
                        class="nav-link <?php echo (isset($halaman) && $halaman == 'riwayat') ? 'active' : 'text-white'; ?>">
                         Riwayat
                     </a>
@@ -282,8 +283,8 @@ if (isset($_POST['simpan'])) {
                     <div class="mb-4">
                         <label for="status" class="form-label small text-secondary">Status</label>
                         <select class="form-select" id="status" name="status" required>
-                            <option value="Aktif" selected>Aktif</option>
-                            <option value="Tidak Aktif">Tidak Aktif</option>
+                            <option value="1" selected>Aktif</option>
+                            <option value="0">Tidak Aktif</option>
                         </select>
                     </div>
 

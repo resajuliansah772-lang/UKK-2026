@@ -6,6 +6,8 @@ include "config/koneksi.php";
 
 // Penanda halaman aktif di sidebar
 $halaman = 'about';
+$namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
+$roleUser = $_SESSION['role'] ?? 'guru';
 
 $nama = "Resa Juliansah";
 $kelas = "XII RPL";
@@ -19,120 +21,138 @@ $hobi = "Main game";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Me | <?php echo htmlspecialchars($nama); ?></title>
+    <title>About Me | <?php echo htmlspecialchars($nama); ?> - Sistem Informasi Pelanggaran Siswa</title>
 
     <!-- BOOTSTRAP 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
+        body { background-color: #f4f6f9; }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+            padding-left: 15px;
+        }
+
         .profile-photo {
             border: 4px solid #ffffff;
             box-shadow: 0 4px 10px rgba(0,0,0,0.12);
             object-fit: cover;
             object-position: top;
         }
+
+        .card { border: none; border-radius: 12px; }
+        .sidebar { background: linear-gradient(180deg, #212529 0%, #1a1e21 100%); min-height: 100vh; }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container-fluid">
     <div class="row">
 
-        <!-- SIDEBAR (Menggunakan struktur Bootstrap murni persis sama) -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 sidebar p-3">
 
-            <h4 class="text-white mb-4">
-                Pelanggaran Siswa
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i> Pelanggaran Siswa
             </h4>
 
             <!-- MENU UNTUK ADMIN -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
+                       class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'siswa') ? 'active' : 'text-white'; ?>">
-                        Data Siswa
+                       class="nav-link text-white">
+                        <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_guru.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'guru') ? 'active' : 'text-white'; ?>">
-                        Data Guru
+                       class="nav-link text-white">
+                        <i class="bi bi-person-badge me-2"></i> Data Guru
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
-                        Kelas
+                       class="nav-link text-white">
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tahun_ajaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">
-                        Tahun Ajaran
+                       class="nav-link text-white">
+                        <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="penempatan_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
-                        Penepatan Siswa
+                       class="nav-link text-white">
+                        <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="wali_kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'wali_kelas') ? 'active' : 'text-white'; ?>">
-                        Wali Kelas
+                       class="nav-link text-white">
+                        <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kategori_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Kategori Pelanggaran
+                       class="nav-link text-white">
+                        <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="jenis_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Jenis Pelanggaran
+                       class="nav-link text-white">
+                        <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
+                       class="nav-link text-white">
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="aboutme.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'about') ? 'active' : 'text-white'; ?>">
-                        About Me
+                       class="nav-link active"
+                       aria-current="page">
+                        <i class="bi bi-info-circle me-2"></i> About Me
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -144,34 +164,34 @@ $hobi = "Main game";
             <!-- MENU UNTUK PETUGAS -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'petugas') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
+                       class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
-                        Kelas
+                       class="nav-link text-white">
+                        <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
+                       class="nav-link text-white">
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -183,55 +203,55 @@ $hobi = "Main game";
             <!-- MENU UNTUK GURU -->
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'guru') { ?>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
+                       class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="catatan_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Catatan Pelanggaran
+                       class="nav-link text-white">
+                        <i class="bi bi-journal-text me-2"></i> Catatan Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tindakan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tindakan') ? 'active' : 'text-white'; ?>">
-                        Tindakan
+                       class="nav-link text-white">
+                        <i class="bi bi-hammer me-2"></i> Tindakan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
+                       class="nav-link text-white">
+                        <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="Riwayat.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'riwayat') ? 'active' : 'text-white'; ?>">
-                        Riwayat
+                       class="nav-link text-white">
+                        <i class="bi bi-clock-history me-2"></i> Riwayat
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="rekap_poin.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'rekap_poin') ? 'active' : 'text-white'; ?>">
-                        Rekap Poin
+                       class="nav-link text-white">
+                        <i class="bi bi-award me-2"></i> Rekap Poin
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
-                        Logout
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
 
@@ -246,15 +266,15 @@ $hobi = "Main game";
         <main class="col-md-9 col-lg-10 p-4">
 
             <!-- HEADER -->
-            <div class="mb-4">
+            <div class="card shadow-sm p-4 bg-white mb-4">
                 <h2 class="fw-bold mb-1">Tentang Saya</h2>
-                <p class="text-muted small mb-0">
+                <p class="text-muted mb-0">
                     Mengenal lebih dekat dengan saya.
                 </p>
             </div>
 
             <!-- PROFIL DI TENGAH -->
-            <section class="card p-4 mb-4 shadow-sm border-1 border-secondary-subtle rounded-3 bg-white">
+            <section class="card p-4 mb-4 shadow-sm bg-white">
                 <div class="text-center">
                     <div class="mb-3">
                         <img
@@ -291,7 +311,7 @@ $hobi = "Main game";
 
                 <div class="text-center">
                     <a href="dashboard.php" class="btn btn-primary btn-sm px-4 rounded-pill">
-                        Kembali ke Dashboard
+                        <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
                     </a>
                 </div>
             </section>
@@ -302,7 +322,7 @@ $hobi = "Main game";
 
                 <div class="row g-3">
                     <div class="col-sm-6 col-xl-4">
-                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm h-100">
                             <div class="text-muted small fw-semibold">NAMA LENGKAP</div>
                             <div class="fw-bold text-dark fs-6 mt-1">
                                 <?php echo htmlspecialchars($nama); ?>
@@ -311,7 +331,7 @@ $hobi = "Main game";
                     </div>
 
                     <div class="col-sm-6 col-xl-4">
-                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm h-100">
                             <div class="text-muted small fw-semibold">KELAS</div>
                             <div class="fw-bold text-dark fs-6 mt-1">
                                 <?php echo htmlspecialchars($kelas); ?>
@@ -320,7 +340,7 @@ $hobi = "Main game";
                     </div>
 
                     <div class="col-sm-6 col-xl-4">
-                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm h-100">
                             <div class="text-muted small fw-semibold">HOBI</div>
                             <div class="fw-bold text-dark fs-6 mt-1">
                                 <?php echo htmlspecialchars($hobi); ?>
@@ -329,7 +349,7 @@ $hobi = "Main game";
                     </div>
 
                     <div class="col-sm-6 col-xl-6">
-                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm h-100">
                             <div class="text-muted small fw-semibold">ASAL SEKOLAH</div>
                             <div class="fw-bold text-dark fs-6 mt-1">
                                 <?php echo htmlspecialchars($sekolah); ?>
@@ -338,7 +358,7 @@ $hobi = "Main game";
                     </div>
 
                     <div class="col-sm-6 col-xl-6">
-                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm">
+                        <div class="p-3 border border-secondary-subtle rounded-3 bg-white shadow-sm h-100">
                             <div class="text-muted small fw-semibold">JURUSAN</div>
                             <div class="fw-bold text-dark fs-6 mt-1">
                                 <?php echo htmlspecialchars($jurusan); ?>

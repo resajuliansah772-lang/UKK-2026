@@ -5,6 +5,8 @@ session_start();
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
+$halaman = 'data_siswa';
+
 ?>
 
 <!DOCTYPE html>
@@ -44,7 +46,7 @@ include "config/koneksi.php";
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="data_siswa.php" class="nav-link text-white">
+                    <a href="data_siswa.php" class="nav-link active">
                         Data Siswa
                     </a>
                 </li>
@@ -68,25 +70,25 @@ include "config/koneksi.php";
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="penepatan_siswa.php" class="nav-link <?php echo ($halaman == 'penepatan_siswa') ? 'active' : 'text-white'; ?>">
+                    <a href="penepatan_siswa.php" class="nav-link text-white">
                         Penepatan Siswa
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="wali_kelas.php" class="nav-link <?php echo ($halaman == 'walikelas') ? 'active' : 'text-white'; ?>">
+                    <a href="wali_kelas.php" class="nav-link text-white">
                         Wali Kelas
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="kategori_pelanggaran.php" class="nav-link <?php echo ($halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
+                    <a href="kategori_pelanggaran.php" class="nav-link text-white">
                         Kategori Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php" class="nav-link <?php echo ($halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
+                    <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         Jenis Pelanggaran
                     </a>
                 </li>
@@ -147,7 +149,13 @@ include "config/koneksi.php";
                                 type="text"
                                 name="nis"
                                 class="form-control"
-                                placeholder="Masukkan NIS"
+                                placeholder="Masukkan NIS (15 digit)"
+                                maxlength="15"
+                                minlength="15"
+                                pattern="[0-9]{15}"
+                                inputmode="numeric"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 15)"
+                                title="NIS harus terdiri dari 15 digit angka"
                                 required
                             >
 
@@ -165,7 +173,13 @@ include "config/koneksi.php";
                                 type="text"
                                 name="nisn"
                                 class="form-control"
-                                placeholder="Masukkan NISN"
+                                placeholder="Masukkan NISN (10 digit)"
+                                maxlength="10"
+                                minlength="10"
+                                pattern="[0-9]{10}"
+                                inputmode="numeric"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                                title="NISN harus terdiri dari 10 digit angka"
                                 required
                             >
 

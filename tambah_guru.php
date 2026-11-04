@@ -67,9 +67,9 @@ include "config/koneksi.php";
                     </a>
                 </li>
 
-                 <li class="nav-item mb-2">
+                <li class="nav-item mb-2">
                     <a href="penepatan_siswa.php" class="nav-link text-white">
-                       Penepatan Siswa
+                        Penepatan Siswa
                     </a>
                 </li>
 
@@ -84,7 +84,7 @@ include "config/koneksi.php";
                         Kategori Pelanggaran
                     </a>
                 </li>
-                
+
                 <li class="nav-item mb-2">
                     <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         Jenis Pelanggaran
@@ -145,7 +145,13 @@ include "config/koneksi.php";
                                 type="text"
                                 name="nip"
                                 class="form-control"
-                                placeholder="Masukkan NIP"
+                                placeholder="Masukkan NIP (18 digit)"
+                                maxlength="18"
+                                minlength="18"
+                                pattern="[0-9]{18}"
+                                inputmode="numeric"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 18)"
+                                title="NIP harus terdiri dari 18 digit angka"
                                 required
                             >
 
@@ -188,6 +194,44 @@ include "config/koneksi.php";
                         </div>
 
 
+                        <!-- PASSWORD -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Password
+                            </label>
+
+                            <input
+                                type="password"
+                                name="password"
+                                class="form-control"
+                                placeholder="Masukkan password"
+                                minlength="6"
+                                required
+                            >
+
+                        </div>
+
+
+                        <!-- KONFIRMASI PASSWORD -->
+                        <div class="mb-3">
+
+                            <label class="form-label">
+                                Konfirmasi Password
+                            </label>
+
+                            <input
+                                type="password"
+                                name="konfirmasi_password"
+                                class="form-control"
+                                placeholder="Masukkan ulang password"
+                                minlength="6"
+                                required
+                            >
+
+                        </div>
+
+
                         <!-- STATUS -->
                         <div class="mb-3">
 
@@ -210,28 +254,6 @@ include "config/koneksi.php";
                                 </option>
 
                             </select>
-
-                        </div>
-
-
-                        <!-- USER ID -->
-                        <div class="mb-3">
-
-                            <label class="form-label">
-                                User ID
-                            </label>
-
-                            <input
-                                type="number"
-                                name="user_id"
-                                class="form-control"
-                                placeholder="Masukkan User ID"
-                                required
-                            >
-
-                            <div class="form-text">
-                                Masukkan ID yang sudah ada pada tabel t_users.
-                            </div>
 
                         </div>
 
