@@ -8,25 +8,31 @@ include "config/koneksi.php";
 
 $halaman = 'data_siswa';
 
-// Ambil ID siswa dari URL
-if (!isset($_GET['id']) || empty($_GET['id'])) {
+// Ambil ID dari URL
+$id = $_GET['id'] ?? '';
+
+if ($id === '' || !ctype_digit((string)$id)) {
     header("Location: data_siswa.php");
     exit;
 }
 
-$id = (int) $_GET['id'];
+// Ambil data siswa berdasarkan ID
+$stmt = mysqli_prepare($koneksi, "SELECT * FROM t_siswa WHERE id = ?");
 
-// Ambil data siswa
-$query = mysqli_prepare($koneksi, "SELECT * FROM t_siswa WHERE id = ?");
-mysqli_stmt_bind_param($query, "i", $id);
-mysqli_stmt_execute($query);
+if (!$stmt) {
+    die("Query gagal: " . mysqli_error($koneksi));
+}
 
-$result = mysqli_stmt_get_result($query);
-$data = mysqli_fetch_assoc($result);
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
 
-if (!$data) {
-    echo "Data siswa tidak ditemukan!";
-    exit;
+$query = mysqli_stmt_get_result($stmt);
+$siswa = mysqli_fetch_assoc($query);
+
+mysqli_stmt_close($stmt);
+
+if (!$siswa) {
+    die("Data siswa tidak ditemukan.");
 }
 
 ?>
@@ -37,100 +43,145 @@ if (!$data) {
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Edit Data Siswa</title>
 
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons untuk Sidebar -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+            padding-left: 15px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+    </style>
 
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container-fluid">
 
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
+        <div class="col-md-3 col-lg-2 sidebar p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i>
                 Pelanggaran Siswa
             </h4>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php" class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-2"></i>
                         Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php" class="nav-link active">
+                        <i class="bi bi-people me-2"></i>
                         Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_guru.php" class="nav-link text-white">
+                        <i class="bi bi-person-badge me-2"></i>
                         Data Guru
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php" class="nav-link text-white">
+                        <i class="bi bi-door-open me-2"></i>
                         Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tahun_ajaran.php" class="nav-link text-white">
+                        <i class="bi bi-calendar-range me-2"></i>
                         Tahun Ajaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="penepatan_siswa.php" class="nav-link text-white">
-                        Penepatan Siswa
+                        <i class="bi bi-journal-check me-2"></i>
+                        Penempatan Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="wali_kelas.php" class="nav-link text-white">
+                        <i class="bi bi-person-workspace me-2"></i>
                         Wali Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kategori_pelanggaran.php" class="nav-link text-white">
+                        <i class="bi bi-tags me-2"></i>
                         Kategori Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="jenis_pelanggaran.php" class="nav-link text-white">
+                        <i class="bi bi-list-task me-2"></i>
                         Jenis Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php" class="nav-link text-white">
+                        <i class="bi bi-file-earmark-text me-2"></i>
                         Laporan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="aboutme.php" class="nav-link text-white">
+                        <i class="bi bi-info-circle me-2"></i>
                         About Me
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
+                        <i class="bi bi-box-arrow-right me-2"></i>
                         Logout
                     </a>
                 </li>
@@ -143,33 +194,34 @@ if (!$data) {
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <h2>
+            <h2 class="fw-bold mb-1">
                 Edit Data Siswa
             </h2>
 
-            <p>
+            <p class="text-muted mb-4">
                 Silakan ubah data siswa.
             </p>
 
 
-            <!-- FORM EDIT -->
+            <!-- FORM EDIT SISWA -->
             <div class="card shadow-sm">
 
-                <div class="card-body">
+                <div class="card-body p-4">
 
                     <form action="proses_edit_siswa.php" method="POST">
 
+                        <!-- ID SISWA -->
                         <input
                             type="hidden"
                             name="id"
-                            value="<?= htmlspecialchars($data['id']) ?>"
+                            value="<?= htmlspecialchars($siswa['id']); ?>"
                         >
 
 
                         <!-- NIS -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 NIS
                             </label>
 
@@ -177,8 +229,8 @@ if (!$data) {
                                 type="text"
                                 name="nis"
                                 class="form-control"
-                                value="<?= htmlspecialchars($data['nis']) ?>"
                                 placeholder="Masukkan NIS (15 digit)"
+                                value="<?= htmlspecialchars($siswa['nis'] ?? ''); ?>"
                                 maxlength="15"
                                 minlength="15"
                                 pattern="[0-9]{15}"
@@ -194,7 +246,7 @@ if (!$data) {
                         <!-- NISN -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 NISN
                             </label>
 
@@ -202,8 +254,8 @@ if (!$data) {
                                 type="text"
                                 name="nisn"
                                 class="form-control"
-                                value="<?= htmlspecialchars($data['nisn']) ?>"
                                 placeholder="Masukkan NISN (10 digit)"
+                                value="<?= htmlspecialchars($siswa['nisn'] ?? ''); ?>"
                                 maxlength="10"
                                 minlength="10"
                                 pattern="[0-9]{10}"
@@ -219,7 +271,7 @@ if (!$data) {
                         <!-- NAMA SISWA -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Nama Siswa
                             </label>
 
@@ -227,7 +279,8 @@ if (!$data) {
                                 type="text"
                                 name="nama"
                                 class="form-control"
-                                value="<?= htmlspecialchars($data['nama']) ?>"
+                                placeholder="Masukkan nama siswa"
+                                value="<?= htmlspecialchars($siswa['nama'] ?? ''); ?>"
                                 required
                             >
 
@@ -237,7 +290,7 @@ if (!$data) {
                         <!-- JENIS KELAMIN -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Jenis Kelamin
                             </label>
 
@@ -247,13 +300,17 @@ if (!$data) {
                                 required
                             >
 
+                                <option value="">
+                                    -- Pilih Jenis Kelamin --
+                                </option>
+
                                 <option value="L"
-                                    <?= ($data['jenis_kelamin'] == 'L') ? 'selected' : '' ?>>
+                                    <?= ($siswa['jenis_kelamin'] ?? '') == 'L' ? 'selected' : ''; ?>>
                                     Laki-laki
                                 </option>
 
                                 <option value="P"
-                                    <?= ($data['jenis_kelamin'] == 'P') ? 'selected' : '' ?>>
+                                    <?= ($siswa['jenis_kelamin'] ?? '') == 'P' ? 'selected' : ''; ?>>
                                     Perempuan
                                 </option>
 
@@ -265,7 +322,7 @@ if (!$data) {
                         <!-- TANGGAL LAHIR -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Tanggal Lahir
                             </label>
 
@@ -273,7 +330,7 @@ if (!$data) {
                                 type="date"
                                 name="tanggal_lahir"
                                 class="form-control"
-                                value="<?= htmlspecialchars($data['tanggal_lahir']) ?>"
+                                value="<?= htmlspecialchars($siswa['tanggal_lahir'] ?? ''); ?>"
                                 required
                             >
 
@@ -283,7 +340,7 @@ if (!$data) {
                         <!-- ALAMAT -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Alamat
                             </label>
 
@@ -291,7 +348,8 @@ if (!$data) {
                                 name="alamat"
                                 class="form-control"
                                 rows="3"
-                            ><?= htmlspecialchars($data['alamat']) ?></textarea>
+                                placeholder="Masukkan alamat siswa"
+                            ><?= htmlspecialchars($siswa['alamat'] ?? ''); ?></textarea>
 
                         </div>
 
@@ -299,7 +357,7 @@ if (!$data) {
                         <!-- STATUS -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Status
                             </label>
 
@@ -310,12 +368,12 @@ if (!$data) {
                             >
 
                                 <option value="1"
-                                    <?= ($data['status_aktif'] == 1) ? 'selected' : '' ?>>
+                                    <?= ($siswa['status_aktif'] ?? '') == 1 ? 'selected' : ''; ?>>
                                     Aktif
                                 </option>
 
                                 <option value="0"
-                                    <?= ($data['status_aktif'] == 0) ? 'selected' : '' ?>>
+                                    <?= ($siswa['status_aktif'] ?? '') == 0 ? 'selected' : ''; ?>>
                                     Tidak Aktif
                                 </option>
 
@@ -324,20 +382,24 @@ if (!$data) {
                         </div>
 
 
-                        <!-- TOMBOL -->
-                        <a
-                            href="data_siswa.php"
-                            class="btn btn-secondary"
-                        >
-                            Batal
-                        </a>
+                        <!-- TOMBOL TANPA IKON -->
+                        <div class="d-flex gap-2">
 
-                        <button
-                            type="submit"
-                            class="btn btn-primary"
-                        >
-                            Simpan Perubahan
-                        </button>
+                            <a
+                                href="data_siswa.php"
+                                class="btn btn-secondary"
+                            >
+                                Kembali
+                            </a>
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                            >
+                                Simpan Perubahan
+                            </button>
+
+                        </div>
 
                     </form>
 
@@ -350,6 +412,8 @@ if (!$data) {
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

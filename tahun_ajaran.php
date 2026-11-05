@@ -1,9 +1,29 @@
 <?php
-
 session_start();
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
+
+// --- PROSES AKTIFKAN TAHUN AJARAN LANGSUNG ---
+if (isset($_GET['aktifkan'])) {
+    $id = intval($_GET['aktifkan']);
+
+    // 1. Ubah semua status_aktif menjadi 0 (Tidak Aktif)
+    $reset = mysqli_query($koneksi, "UPDATE t_tahun_ajaran SET status_aktif = 0");
+
+    if ($reset) {
+        // 2. Ubah tahun ajaran yang dipilih menjadi status_aktif = 1 (Aktif)
+        $aktifkan = mysqli_query($koneksi, "UPDATE t_tahun_ajaran SET status_aktif = 1 WHERE id = $id");
+
+        if ($aktifkan) {
+            echo "<script>alert('Tahun ajaran berhasil diaktifkan!'); window.location='tahun_ajaran.php';</script>";
+            exit;
+        }
+    }
+
+    echo "<script>alert('Gagal mengaktifkan tahun ajaran!'); window.location='tahun_ajaran.php';</script>";
+    exit;
+}
 
 // Halaman aktif
 $halaman = 'tahun_ajaran';
@@ -17,7 +37,6 @@ $query = mysqli_query($koneksi, $sql);
 if (!$query) {
     die("Query gagal: " . mysqli_error($koneksi));
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -251,20 +270,24 @@ if (!$query) {
 
                                 <td>
                                     <div class="d-flex gap-1">
+                                        <?php if (($data['status_aktif'] ?? 0) == 0) { ?>
+                                            <a href="tahun_ajaran.php?aktifkan=<?= urlencode((string)$data['id']); ?>" 
+                                               class="btn btn-success btn-sm"
+                                               onclick="return confirm('Aktifkan tahun ajaran ini? Tahun ajaran lain akan otomatis dinonaktifkan.');">
+                                                Aktifkan
+                                            </a>
+                                        <?php } ?>
 
-                                        <a
-                                            href="edit_tahun_ajaran.php?id=<?= urlencode((string)$data['id']); ?>"
-                                            class="btn btn-warning btn-sm">
+                                        <a href="edit_tahun_ajaran.php?id=<?= urlencode((string)$data['id']); ?>" 
+                                           class="btn btn-warning btn-sm">
                                             Edit
                                         </a>
 
-                                        <a
-                                            href="hapus_tahun_ajaran.php?id=<?= urlencode((string)$data['id']); ?>"
-                                            class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Yakin ingin menghapus data tahun ajaran ini?');">
+                                        <a href="hapus_tahun_ajaran.php?id=<?= urlencode((string)$data['id']); ?>" 
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('Yakin ingin menghapus data tahun ajaran ini?');">
                                             Hapus
                                         </a>
-
                                     </div>
                                 </td>
 
@@ -317,7 +340,6 @@ $(document).ready(function () {
 
         info: true,
 
-        // Kolom nomor dan aksi tidak diurutkan atau dicari
         columnDefs: [
             {
                 targets: [0, 5],
@@ -326,10 +348,8 @@ $(document).ready(function () {
             }
         ],
 
-        // Urutkan berdasarkan ID sesuai urutan dari database
         order: [[0, 'asc']],
 
-        // Bahasa Indonesia
         language: {
             search: "Cari tahun ajaran:",
 
@@ -359,4 +379,4 @@ $(document).ready(function () {
 </script>
 
 </body>
-</html>
+</html> 

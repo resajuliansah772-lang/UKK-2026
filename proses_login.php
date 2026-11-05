@@ -20,10 +20,15 @@ if ($email === '' || $password === '') {
     exit;
 }
 
-// Cari akun berdasarkan email
+// Cari akun berdasarkan email di t_users, 
+// sekaligus pastikan guru/user tersebut berstatus aktif (status_aktif = 1) di t_guru 
+// (Sesuaikan nama kolom status jika di tabel t_users langsung atau t_guru)
 $stmt = mysqli_prepare(
     $koneksi,
-    "SELECT * FROM t_users WHERE email = ? LIMIT 1"
+    "SELECT u.*, g.status_aktif AS status_guru 
+     FROM t_users u 
+     LEFT JOIN t_guru g ON u.id = g.user_id 
+     WHERE u.email = ? LIMIT 1"
 );
 
 mysqli_stmt_bind_param($stmt, "s", $email);
@@ -34,8 +39,15 @@ $data = mysqli_fetch_assoc($result);
 
 mysqli_stmt_close($stmt);
 
-// Periksa akun
+// Periksa apakah akun ditemukan
 if ($data) {
+
+    // Cek apakah status guru/user tidak aktif (misal nilai status_aktif = 0)
+    // Catatan: Jika kolom status_aktif bernilai 0 (tidak aktif), maka langsung Tolak Login.
+    if (isset($data['status_guru']) && $data['status_guru'] == 0) {
+        header("Location: login.php?pesan=gagal");
+        exit;
+    }
 
     $password_db = $data['password'];
 

@@ -296,6 +296,7 @@ if (!$query) {
                                 <th>Nama Kelas</th>
                                 <th>Tingkat</th>
                                 <th>Jurusan</th>
+                                <th>Status Aktif</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -324,6 +325,14 @@ if (!$query) {
 
                                 <td>
                                     <?= htmlspecialchars($kelas['jurusan'] ?? ''); ?>
+                                </td>
+
+                                <td>
+                                    <?php if (isset($kelas['status_aktif']) && $kelas['status_aktif'] == 1) { ?>
+                                        <span class="badge bg-success">Aktif</span>
+                                    <?php } else { ?>
+                                        <span class="badge bg-secondary">Tidak Aktif</span>
+                                    <?php } ?>
                                 </td>
 
                                 <td>
@@ -399,10 +408,10 @@ $(document).ready(function () {
 
         info: true,
 
-        // Kolom No dan Aksi tidak dapat diurutkan atau dicari
+        // Kolom No, Status Aktif (indeks 4) dan Aksi (indeks 5) tidak diurutkan atau dicari
         columnDefs: [
             {
-                targets: [0, 4],
+                targets: [0, 4, 5],
                 orderable: false,
                 searchable: false
             }

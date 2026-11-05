@@ -12,7 +12,7 @@ $halaman = 'dashboard';
 $namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
 $roleUser = $_SESSION['role'] ?? 'guru';
 
-// --- STATISTIK UTAMA ---
+// --- STATISTIK UTAMA (Dihitung otomatis dari database) ---
 $querySiswa = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_siswa WHERE status_aktif = 1");
 $jumlahSiswa = mysqli_fetch_assoc($querySiswa)['total'] ?? 0;
 
@@ -72,11 +72,12 @@ $jumlahPelanggaran = mysqli_fetch_assoc($queryPelanggaran)['total'] ?? 0;
                 </ul>
 
             <?php } else { ?>
-                <!-- MENU KHUSUS GURU (KOMPLIT SESUAI PERMINTAAN) -->
+                <!-- MENU KHUSUS GURU -->
                 <ul class="nav nav-pills flex-column gap-1">
                     <li class="nav-item"><a href="dashboard.php" class="nav-link active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="catatan_pelanggaran.php" class="nav-link text-white"><i class="bi bi-journal-text me-2"></i> Catatan Pelanggaran</a></li>
-                    <li class="nav-item"><a href="tindakan.php" class="nav-link text-white"><i class="bi bi-tools me-2"></i> Tindakan</a></li>
+                    <!-- IKON TINDAKAN DIUBAH MENJADI BI-HAMMER -->
+                    <li class="nav-item"><a href="tindakan.php" class="nav-link text-white"><i class="bi bi-hammer me-2"></i> Tindakan</a></li>
                     <li class="nav-item"><a href="laporan.php" class="nav-link text-white"><i class="bi bi-file-earmark-text me-2"></i> Laporan</a></li>
                     <li class="nav-item"><a href="riwayat.php" class="nav-link text-white"><i class="bi bi-clock-history me-2"></i> Riwayat</a></li>
                     <li class="nav-item"><a href="rekap_poin.php" class="nav-link text-white"><i class="bi bi-award me-2"></i> Rekap Poin</a></li>
@@ -101,7 +102,7 @@ $jumlahPelanggaran = mysqli_fetch_assoc($queryPelanggaran)['total'] ?? 0;
                 </div>
             </div>
 
-            <!-- KARTU STATISTIK UTAMA -->
+            <!-- KARTU STATISTIK UTAMA (Terhubung otomatis ke database) -->
             <div class="row g-4 mb-4">
                 <div class="col-md-3 col-sm-6">
                     <div class="card shadow-sm border-start border-primary border-4">

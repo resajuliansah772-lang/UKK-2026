@@ -1,311 +1,430 @@
+
 <?php
 session_start();
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// Penanda halaman aktif di sidebar
 $halaman = 'kategori_pelanggaran';
+$pesan = "";
 
-// Proses simpan data saat form di-submit
-if (isset($_POST['simpan'])) {
-    $nama_kategori = mysqli_real_escape_string($koneksi, $_POST['nama_kategori']);
-    $deskripsi     = mysqli_real_escape_string($koneksi, $_POST['deskripsi']);
-    $status        = mysqli_real_escape_string($koneksi, $_POST['status']);
+// Nilai awal form
+$nama_kategori = "";
+$deskripsi = "";
+$status = "1";
 
-    // ✅ SUDAH SESUAI PERSIS DENGAN TABEL DI DATABASE
-    $query = "INSERT INTO t_pelanggaran_kategori (nama, deskripsi, status_aktif) 
-              VALUES ('$nama_kategori', '$deskripsi', '$status')";
+// Proses simpan data
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    if (mysqli_query($koneksi, $query)) {
-        echo "<script>
-                alert('Data Kategori Pelanggaran berhasil ditambahkan!');
-                window.location.href='kategori_pelanggaran.php';
-              </script>";
+    $nama_kategori = trim($_POST['nama_kategori'] ?? "");
+    $deskripsi = trim($_POST['deskripsi'] ?? "");
+    $status = $_POST['status'] ?? "1";
+
+    if (
+        $nama_kategori === "" ||
+        $deskripsi === "" ||
+        !in_array($status, ["0", "1"], true)
+    ) {
+
+        $pesan = "Semua data wajib diisi dengan benar.";
+
     } else {
-        $error = "Gagal menyimpan data: " . mysqli_error($koneksi);
+
+        $stmt = mysqli_prepare(
+            $koneksi,
+            "INSERT INTO t_pelanggaran_kategori
+                (nama, deskripsi, status_aktif)
+             VALUES (?, ?, ?)"
+        );
+
+        if ($stmt) {
+
+            $status_int = (int) $status;
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "ssi",
+                $nama_kategori,
+                $deskripsi,
+                $status_int
+            );
+
+            if (mysqli_stmt_execute($stmt)) {
+
+                mysqli_stmt_close($stmt);
+
+                header("Location: kategori_pelanggaran.php?status=berhasil");
+                exit;
+
+            } else {
+
+                $pesan = "Gagal menyimpan data: " . mysqli_stmt_error($stmt);
+                mysqli_stmt_close($stmt);
+            }
+
+        } else {
+
+            $pesan = "Query gagal diproses: " . mysqli_error($koneksi);
+        }
     }
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Tambah Kategori Pelanggaran</title>
 
-    <!-- BOOTSTRAP 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+            padding-left: 15px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+    </style>
+
 </head>
 
-<body class="bg-light">
+<body>
 
 <div class="container-fluid">
+
     <div class="row">
 
-        <!-- SIDEBAR (Murni Kelas Bootstrap 5) -->
-        <div class="col-md-3 col-lg-2 bg-dark min-vh-100 p-3">
+        <!-- SIDEBAR -->
+        <div class="col-md-3 col-lg-2 sidebar p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i>
                 Pelanggaran Siswa
             </h4>
 
-            <!-- MENU UNTUK ADMIN -->
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') { ?>
+            <!-- MENU ADMIN -->
+            <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
 
-            <ul class="nav nav-pills flex-column">
+                <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="dashboard.php" class="nav-link text-white">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="data_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'siswa') ? 'active' : 'text-white'; ?>">
-                        Data Siswa
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="data_siswa.php" class="nav-link text-white">
+                            <i class="bi bi-people me-2"></i> Data Siswa
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="data_guru.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'guru') ? 'active' : 'text-white'; ?>">
-                        Data Guru
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="data_guru.php" class="nav-link text-white">
+                            <i class="bi bi-person-badge me-2"></i> Data Guru
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
-                        Kelas
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="kelas.php" class="nav-link text-white">
+                            <i class="bi bi-door-open me-2"></i> Kelas
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="tahun_ajaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tahun_ajaran') ? 'active' : 'text-white'; ?>">
-                        Tahun Ajaran
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="tahun_ajaran.php" class="nav-link text-white">
+                            <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="penempatan_siswa.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'penempatan_siswa') ? 'active' : 'text-white'; ?>">
-                        Penempatan Siswa
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="penepatan_siswa.php" class="nav-link text-white">
+                            <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="wali_kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'wali_kelas') ? 'active' : 'text-white'; ?>">
-                        Wali Kelas
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="wali_kelas.php" class="nav-link text-white">
+                            <i class="bi bi-person-workspace me-2"></i> Wali Kelas
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="kategori_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kategori_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Kategori Pelanggaran
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="kategori_pelanggaran.php" class="nav-link active">
+                            <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="jenis_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'jenis_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Jenis Pelanggaran
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="jenis_pelanggaran.php" class="nav-link text-white">
+                            <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="laporan.php" class="nav-link text-white">
+                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="aboutme.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'about') ? 'active' : 'text-white'; ?>">
-                        About Me
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="aboutme.php" class="nav-link text-white">
+                            <i class="bi bi-info-circle me-2"></i> About Me
+                        </a>
+                    </li>
 
-                <hr class="text-secondary">
+                    <hr class="text-secondary my-3">
 
-                <li class="nav-item">
-                    <a href="logout.php" class="nav-link text-danger">
-                        Logout
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="logout.php" class="nav-link text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </a>
+                    </li>
 
-            </ul>
+                </ul>
 
-            <?php } ?>
+            <?php endif; ?>
 
+            <!-- MENU PETUGAS -->
+            <?php if (($_SESSION['role'] ?? '') === 'petugas'): ?>
 
-            <!-- MENU UNTUK PETUGAS -->
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'petugas') { ?>
+                <ul class="nav nav-pills flex-column gap-1">
 
-            <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a href="dashboard.php" class="nav-link text-white">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="kelas.php" class="nav-link text-white">
+                            <i class="bi bi-door-open me-2"></i> Kelas
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="kelas.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'kelas') ? 'active' : 'text-white'; ?>">
-                        Kelas
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="laporan.php" class="nav-link text-white">
+                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
-                    </a>
-                </li>
+                    <hr class="text-secondary my-3">
 
-                <hr class="text-secondary">
+                    <li class="nav-item">
+                        <a href="logout.php" class="nav-link text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </a>
+                    </li>
 
-                <li class="nav-item">
-                    <a href="logout.php" class="nav-link text-danger">
-                        Logout
-                    </a>
-                </li>
+                </ul>
 
-            </ul>
+            <?php endif; ?>
 
-            <?php } ?>
+            <!-- MENU GURU -->
+            <?php if (($_SESSION['role'] ?? '') === 'guru'): ?>
 
+                <ul class="nav nav-pills flex-column gap-1">
 
-            <!-- MENU UNTUK GURU -->
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'guru') { ?>
+                    <li class="nav-item">
+                        <a href="dashboard.php" class="nav-link text-white">
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                        </a>
+                    </li>
 
-            <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a href="catatan_pelanggaran.php" class="nav-link text-white">
+                            <i class="bi bi-journal-text me-2"></i> Catatan Pelanggaran
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="dashboard.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'dashboard') ? 'active' : 'text-white'; ?>">
-                        Dashboard
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="tindakan.php" class="nav-link text-white">
+                            <i class="bi bi-clipboard-check me-2"></i> Tindakan
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="catatan_pelanggaran.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'catatan_pelanggaran') ? 'active' : 'text-white'; ?>">
-                        Catatan Pelanggaran
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="laporan.php" class="nav-link text-white">
+                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="tindakan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'tindakan') ? 'active' : 'text-white'; ?>">
-                        Tindakan
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="riwayat.php" class="nav-link text-white">
+                            <i class="bi bi-clock-history me-2"></i> Riwayat
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="laporan.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'laporan') ? 'active' : 'text-white'; ?>">
-                        Laporan
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="rekap_poin.php" class="nav-link text-white">
+                            <i class="bi bi-bar-chart me-2"></i> Rekap Poin
+                        </a>
+                    </li>
 
-                <li class="nav-item mb-2">
-                    <a href="riwayat.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'riwayat') ? 'active' : 'text-white'; ?>">
-                        Riwayat
-                    </a>
-                </li>
+                    <hr class="text-secondary my-3">
 
-                <li class="nav-item mb-2">
-                    <a href="rekap_poin.php"
-                       class="nav-link <?php echo (isset($halaman) && $halaman == 'rekap_poin') ? 'active' : 'text-white'; ?>">
-                        Rekap Poin
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a href="logout.php" class="nav-link text-danger">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </a>
+                    </li>
 
-                <hr class="text-secondary">
+                </ul>
 
-                <li class="nav-item">
-                    <a href="logout.php" class="nav-link text-danger">
-                        Logout
-                    </a>
-                </li>
-
-            </ul>
-
-            <?php } ?>
+            <?php endif; ?>
 
         </div>
 
-
-        <!-- KONTEN UTAMA DI SEBELAH KANAN -->
+        <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <!-- HEADER -->
-            <div class="mb-4">
-                <h2 class="fw-bold mb-1">Tambah Kategori Pelanggaran</h2>
-                <p class="text-muted small mb-0">
-                    Formulir penambahan data kategori pelanggaran siswa.
-                </p>
-            </div>
+            <h2 class="fw-bold mb-1">
+                Tambah Kategori Pelanggaran
+            </h2>
 
-            <!-- FORM CARD CONTAINER -->
-            <div class="card border-1 border-secondary-subtle shadow-sm p-4 rounded-3 bg-white">
+            <p class="text-muted mb-4">
+                Silakan isi data kategori pelanggaran dengan lengkap.
+            </p>
 
-                <?php if (isset($error)) { ?>
-                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                        <?php echo $error; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php } ?>
+            <!-- FORM CARD -->
+            <div class="card shadow-sm">
 
-                <form action="" method="POST">
+                <div class="card-body p-4">
 
-                    <div class="mb-3">
-                        <label for="nama_kategori" class="form-label small text-secondary">Nama Kategori</label>
-                        <input type="text" class="form-control" id="nama_kategori" name="nama_kategori" placeholder="Contoh: Kategori Sub-51" required>
-                    </div>
+                    <?php if ($pesan !== ""): ?>
 
-                    <div class="mb-3">
-                        <label for="deskripsi" class="form-label small text-secondary">Deskripsi</label>
-                        <textarea class="form-control" id="deskripsi" name="deskripsi" rows="4" placeholder="Contoh: Deskripsi Kategori Pelanggaran 51" required></textarea>
-                    </div>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
 
-                    <div class="mb-4">
-                        <label for="status" class="form-label small text-secondary">Status</label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="1" selected>Aktif</option>
-                            <option value="0">Tidak Aktif</option>
-                        </select>
-                    </div>
+                            <?= htmlspecialchars($pesan, ENT_QUOTES, 'UTF-8'); ?>
 
-                    <div class="d-flex gap-2">
-                        <a href="kategori_pelanggaran.php" class="btn btn-secondary px-3">
-                            Batal
-                        </a>
-                        <button type="submit" name="simpan" class="btn btn-primary px-3">
-                            Simpan Data
-                        </button>
-                    </div>
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="alert">
+                            </button>
 
-                </form>
+                        </div>
+
+                    <?php endif; ?>
+
+                    <form method="POST" action="">
+
+                        <!-- NAMA KATEGORI -->
+                        <div class="mb-3">
+
+                            <label for="nama_kategori" class="form-label fw-semibold">
+                                Nama Kategori
+                            </label>
+
+                            <input
+                                type="text"
+                                name="nama_kategori"
+                                id="nama_kategori"
+                                class="form-control"
+                                placeholder="Masukkan nama kategori pelanggaran"
+                                value="<?= htmlspecialchars($nama_kategori, ENT_QUOTES, 'UTF-8'); ?>"
+                                required>
+
+                        </div>
+
+                        <!-- DESKRIPSI -->
+                        <div class="mb-3">
+
+                            <label for="deskripsi" class="form-label fw-semibold">
+                                Deskripsi
+                            </label>
+
+                            <textarea
+                                name="deskripsi"
+                                id="deskripsi"
+                                class="form-control"
+                                rows="4"
+                                placeholder="Masukkan deskripsi kategori pelanggaran"
+                                required><?= htmlspecialchars($deskripsi, ENT_QUOTES, 'UTF-8'); ?></textarea>
+
+                        </div>
+
+                        <!-- STATUS -->
+                        <div class="mb-3">
+
+                            <label for="status" class="form-label fw-semibold">
+                                Status
+                            </label>
+
+                            <select
+                                name="status"
+                                id="status"
+                                class="form-select"
+                                required>
+
+                                <option value="1" <?= $status === "1" ? "selected" : ""; ?>>
+                                    Aktif
+                                </option>
+
+                                <option value="0" <?= $status === "0" ? "selected" : ""; ?>>
+                                    Tidak Aktif
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <!-- TOMBOL TANPA IKON -->
+                        <div class="d-flex gap-2">
+
+                            <a href="kategori_pelanggaran.php" class="btn btn-secondary">
+                                Kembali
+                            </a>
+
+                            <button type="submit" class="btn btn-primary">
+                                Simpan Kategori
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
 
             </div>
 
         </main>
+
     </div>
+
 </div>
 
-<!-- BOOTSTRAP 5 JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- BOOTSTRAP JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

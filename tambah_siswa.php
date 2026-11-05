@@ -1,3 +1,4 @@
+
 <?php
 
 session_start();
@@ -15,12 +16,42 @@ $halaman = 'data_siswa';
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Tambah Siswa</title>
 
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons untuk Sidebar -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+            padding-left: 15px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+    </style>
 
 </head>
 
@@ -31,84 +62,97 @@ $halaman = 'data_siswa';
     <div class="row">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 bg-dark p-3 min-vh-100">
+        <div class="col-md-3 col-lg-2 sidebar p-3 min-vh-100">
 
-            <h4 class="text-white mb-4">
+            <h4 class="text-white mb-4 fw-bold fs-5 px-2">
+                <i class="bi bi-shield-exclamation text-primary me-2"></i>
                 Pelanggaran Siswa
             </h4>
 
-            <ul class="nav nav-pills flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="dashboard.php" class="nav-link text-white">
+                        <i class="bi bi-speedometer2 me-2"></i>
                         Dashboard
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_siswa.php" class="nav-link active">
+                        <i class="bi bi-people me-2"></i>
                         Data Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="data_guru.php" class="nav-link text-white">
+                        <i class="bi bi-person-badge me-2"></i>
                         Data Guru
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kelas.php" class="nav-link text-white">
+                        <i class="bi bi-door-open me-2"></i>
                         Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="tahun_ajaran.php" class="nav-link text-white">
+                        <i class="bi bi-calendar-range me-2"></i>
                         Tahun Ajaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="penepatan_siswa.php" class="nav-link text-white">
-                        Penepatan Siswa
+                        <i class="bi bi-journal-check me-2"></i>
+                        Penempatan Siswa
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="wali_kelas.php" class="nav-link text-white">
+                        <i class="bi bi-person-workspace me-2"></i>
                         Wali Kelas
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="kategori_pelanggaran.php" class="nav-link text-white">
+                        <i class="bi bi-tags me-2"></i>
                         Kategori Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="jenis_pelanggaran.php" class="nav-link text-white">
+                        <i class="bi bi-list-task me-2"></i>
                         Jenis Pelanggaran
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="laporan.php" class="nav-link text-white">
+                        <i class="bi bi-file-earmark-text me-2"></i>
                         Laporan
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
+                <li class="nav-item">
                     <a href="aboutme.php" class="nav-link text-white">
+                        <i class="bi bi-info-circle me-2"></i>
                         About Me
                     </a>
                 </li>
 
-                <hr class="text-secondary">
+                <hr class="text-secondary my-3">
 
                 <li class="nav-item">
                     <a href="logout.php" class="nav-link text-danger">
+                        <i class="bi bi-box-arrow-right me-2"></i>
                         Logout
                     </a>
                 </li>
@@ -121,27 +165,26 @@ $halaman = 'data_siswa';
         <!-- KONTEN UTAMA -->
         <main class="col-md-9 col-lg-10 p-4">
 
-            <h2>
+            <h2 class="fw-bold mb-1">
                 Tambah Data Siswa
             </h2>
 
-            <p>
+            <p class="text-muted mb-4">
                 Silakan isi data siswa dengan lengkap.
             </p>
 
 
             <!-- FORM -->
-            <div class="card">
+            <div class="card shadow-sm">
 
-                <div class="card-body">
+                <div class="card-body p-4">
 
                     <form action="proses_tambah_siswa.php" method="POST">
-
 
                         <!-- NIS -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 NIS
                             </label>
 
@@ -165,7 +208,7 @@ $halaman = 'data_siswa';
                         <!-- NISN -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 NISN
                             </label>
 
@@ -189,7 +232,7 @@ $halaman = 'data_siswa';
                         <!-- NAMA -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Nama Siswa
                             </label>
 
@@ -207,7 +250,7 @@ $halaman = 'data_siswa';
                         <!-- JENIS KELAMIN -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Jenis Kelamin
                             </label>
 
@@ -237,7 +280,7 @@ $halaman = 'data_siswa';
                         <!-- TANGGAL LAHIR -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Tanggal Lahir
                             </label>
 
@@ -254,7 +297,7 @@ $halaman = 'data_siswa';
                         <!-- ALAMAT -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Alamat
                             </label>
 
@@ -271,7 +314,7 @@ $halaman = 'data_siswa';
                         <!-- STATUS -->
                         <div class="mb-3">
 
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 Status
                             </label>
 
@@ -294,21 +337,24 @@ $halaman = 'data_siswa';
                         </div>
 
 
-                        <!-- TOMBOL -->
+                        <!-- TOMBOL TANPA IKON -->
+                        <div class="d-flex gap-2">
 
-                        <a
-                            href="data_siswa.php"
-                            class="btn btn-secondary"
-                        >
-                            Kembali
-                        </a>
+                            <a
+                                href="data_siswa.php"
+                                class="btn btn-secondary"
+                            >
+                                Kembali
+                            </a>
 
-                        <button
-                            type="submit"
-                            class="btn btn-primary"
-                        >
-                            Simpan Siswa
-                        </button>
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                            >
+                                Simpan Siswa
+                            </button>
+
+                        </div>
 
                     </form>
 
@@ -321,6 +367,8 @@ $halaman = 'data_siswa';
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 
