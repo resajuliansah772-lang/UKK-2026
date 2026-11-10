@@ -19,7 +19,7 @@ $siswa = mysqli_query($koneksi, "
     ORDER BY nama ASC
 ");
 
-// 2. Ambil data jenis pelanggaran (mengambil kolom yang pasti ada: id, nama, poin)
+// 2. Ambil data jenis pelanggaran
 $pelanggaran = mysqli_query($koneksi, "
     SELECT id, nama, poin 
     FROM t_pelanggaran 
@@ -78,14 +78,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tambah Catatan Pelanggaran - Sistem Informasi Pelanggaran Siswa</title>
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Select2 CSS & Bootstrap 5 Theme -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
     <style>
         body { background-color: #f4f6f9; }
         .nav-link { transition: all 0.3s ease; border-radius: 6px; }
         .nav-link:hover { background-color: #0d6efd !important; color: white !important; }
         .card { border: none; border-radius: 12px; }
+
+        /* Perbaikan Posisi Kotak Pencarian Select2 agar di atas */
+        .select2-container--bootstrap-5 .select2-dropdown .select2-search {
+            padding: 0.5rem;
+            background-color: #fff;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .select2-container--bootstrap-5 .select2-dropdown .select2-search .select2-search__field {
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+        }
     </style>
 </head>
 <body>
@@ -121,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <!-- Pilih Siswa -->
                     <div class="mb-3">
                         <label for="siswa_id" class="form-label fw-semibold">Pilih Siswa</label>
-                        <select name="siswa_id" id="siswa_id" class="form-select" required>
+                        <select name="siswa_id" id="siswa_id" class="form-select select2" required>
                             <option value="">-- Pilih Siswa --</option>
                             <?php if ($siswa) { while ($s = mysqli_fetch_assoc($siswa)) { ?>
                                 <option value="<?= (int)$s['id']; ?>">
@@ -134,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <!-- Jenis Pelanggaran -->
                     <div class="mb-3">
                         <label for="pelanggaran_id" class="form-label fw-semibold">Jenis Pelanggaran</label>
-                        <select name="pelanggaran_id" id="pelanggaran_id" class="form-select" required>
+                        <select name="pelanggaran_id" id="pelanggaran_id" class="form-select select2" required>
                             <option value="">-- Pilih Jenis Pelanggaran --</option>
                             <?php if ($pelanggaran) { while ($p = mysqli_fetch_assoc($pelanggaran)) { ?>
                                 <option value="<?= (int)$p['id']; ?>">
@@ -147,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <!-- Pelapor / Guru -->
                     <div class="mb-3">
                         <label for="guru_id" class="form-label fw-semibold">Pelapor / Guru</label>
-                        <select name="guru_id" id="guru_id" class="form-select" required>
+                        <select name="guru_id" id="guru_id" class="form-select select2" required>
                             <option value="">-- Pilih Guru Pelapor --</option>
                             <?php if ($guru) { while ($g = mysqli_fetch_assoc($guru)) { ?>
                                 <option value="<?= (int)$g['id']; ?>">
@@ -175,8 +194,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
+<!-- jQuery (Wajib untuk Select2) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Inisialisasi Select2 -->
+<script>
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%'
+    });
+});
+</script>
 
 </body>
 </html>
