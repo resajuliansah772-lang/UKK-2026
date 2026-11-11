@@ -19,8 +19,12 @@ if ($roleUser != 'admin') {
 // =====================================
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     $sql_export_query = "
-        SELECT ps.id, ps.tanggal, ps.nama_siswa, ps.nama_pelanggaran, ps.poin, ps.keterangan
+        SELECT ps.id, ps.tanggal, ps.nama_siswa, 
+               COALESCE(k.nama, '-') AS nama_kelas,
+               ps.nama_pelanggaran, ps.poin, ps.keterangan
         FROM t_pelanggaran_siswa ps
+        LEFT JOIN t_kelas_siswa ks ON ps.siswa_id = ks.siswa_id
+        LEFT JOIN t_kelas k ON ks.kelas_id = k.id
         $filter_guru
         ORDER BY ps.tanggal DESC, ps.id DESC
     ";
@@ -39,7 +43,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
     $output = fopen('php://output', 'w');
     fwrite($output, "\xEF\xBB\xBF");
 
-    fputcsv($output, ['No', 'Tanggal', 'Nama Siswa', 'Jenis Pelanggaran', 'Poin', 'Keterangan'], ';');
+    fputcsv($output, ['No', 'Tanggal', 'Nama Siswa', 'Kelas', 'Jenis Pelanggaran', 'Poin', 'Keterangan'], ';');
 
     $no = 1;
     while ($row = mysqli_fetch_assoc($sql_export)) {
@@ -47,6 +51,7 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
             $no++,
             $row['tanggal'],
             $row['nama_siswa'],
+            $row['nama_kelas'],
             $row['nama_pelanggaran'],
             $row['poin'],
             $row['keterangan']
@@ -58,14 +63,20 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
 }
 
 // =====================================
-// MENGAMBIL DATA LAPORAN
+// MENGAMBIL DATA LAPORAN BESERTA KELAS
 // =====================================
-$query = mysqli_query($koneksi, "
-    SELECT ps.id, ps.tanggal, ps.nama_siswa, ps.nama_pelanggaran, ps.poin, ps.keterangan
+$sql_query = "
+    SELECT ps.id, ps.tanggal, ps.nama_siswa, 
+           COALESCE(k.nama, '-') AS nama_kelas,
+           ps.nama_pelanggaran, ps.poin, ps.keterangan
     FROM t_pelanggaran_siswa ps
+    LEFT JOIN t_kelas_siswa ks ON ps.siswa_id = ks.siswa_id
+    LEFT JOIN t_kelas k ON ks.kelas_id = k.id
     $filter_guru
     ORDER BY ps.tanggal DESC, ps.id DESC
-");
+";
+
+$query = mysqli_query($koneksi, $sql_query);
 
 if (!$query) {
     die("Gagal mengambil data laporan: " . mysqli_error($koneksi));
@@ -215,6 +226,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                     <th>No</th>
                                     <th>Tanggal</th>
                                     <th>Nama Siswa</th>
+                                    <th>Kelas</th>
                                     <th>Jenis Pelanggaran</th>
                                     <th>Poin</th>
                                     <th>Keterangan</th>
@@ -227,6 +239,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                     <td><?= $no++; ?></td>
                                     <td><?= !empty($data['tanggal']) ? date('d-m-Y', strtotime($data['tanggal'])) : '-'; ?></td>
                                     <td><?= htmlspecialchars($data['nama_siswa'] ?? '-'); ?></td>
+                                    <td><span class="badge bg-secondary"><?= htmlspecialchars($data['nama_kelas'] ?? '-'); ?></span></td>
                                     <td><?= htmlspecialchars($data['nama_pelanggaran'] ?? '-'); ?></td>
                                     <td class="text-center"><span class="badge bg-danger"><?= (int)$data['poin']; ?></span></td>
                                     <td><?= htmlspecialchars($data['keterangan'] ?? '-'); ?></td>

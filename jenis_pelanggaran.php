@@ -107,7 +107,21 @@ if (!$query) {
         }
 
         .card { border: none; border-radius: 12px; }
-        .sidebar { background: linear-gradient(180deg, #212529 0%, #1a1e21 100%); }
+        
+        /* SIDEBAR TETAP DIAM (STICKY) */
+        .sidebar { 
+            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* KONTEN UTAMA BISA DISCRROLL SENDIRI */
+        .main-content {
+            height: 100vh;
+            overflow-y: auto;
+        }
 
         @media print {
             .sidebar,
@@ -122,6 +136,8 @@ if (!$query) {
             main {
                 width: 100% !important;
                 padding: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
             }
         }
     </style>
@@ -130,10 +146,11 @@ if (!$query) {
 <body>
 
 <div class="container-fluid">
-    <div class="row">
+    <!-- Tambahan flex-nowrap agar baris menyamping sempurna -->
+    <div class="row flex-nowrap">
 
         <!-- SIDEBAR -->
-        <div class="col-md-3 col-lg-2 sidebar p-3 min-vh-100">
+        <div class="col-md-3 col-lg-2 sidebar p-3">
 
             <h4 class="text-white mb-4 fw-bold fs-5 px-2">
                 <i class="bi bi-shield-exclamation text-primary me-2"></i> Pelanggaran Siswa
@@ -220,8 +237,8 @@ if (!$query) {
             </ul>
         </div>
 
-        <!-- KONTEN UTAMA -->
-        <main class="col-md-9 col-lg-10 p-4">
+        <!-- KONTEN UTAMA (Ditambahkan kelas main-content) -->
+        <main class="col-md-9 col-lg-10 p-4 main-content">
 
             <div class="card shadow-sm p-4 bg-white">
 
