@@ -106,7 +106,7 @@ $hobi = "Main game";
                 </li>
 
                 <li class="nav-item">
-                    <a href="penempatan_siswa.php"
+                    <a href="penepatan_siswa.php"
                        class="nav-link text-white">
                         <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>

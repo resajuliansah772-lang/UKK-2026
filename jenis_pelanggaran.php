@@ -172,7 +172,7 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item">
-                    <a href="penempatan_siswa.php" class="nav-link text-white">
+                    <a href="penepatan_siswa.php" class="nav-link text-white">
                         <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>
                 </li>

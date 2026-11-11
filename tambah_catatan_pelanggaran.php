@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 
@@ -11,12 +12,22 @@ include "config/koneksi.php";
 $pesan = "";
 $halaman = 'catatan_pelanggaran';
 
-// 1. Ambil data siswa
+// Ambil ID akun yang sedang login
+// Mendukung session user_id maupun id
+$user_id_login = (int) ($_SESSION['user_id'] ?? $_SESSION['id'] ?? 0);
+
+// Ambil nama user/guru dari session
+$nama_user_login = $_SESSION['name'] ?? $_SESSION['nama'] ?? 'Pengguna';
+
+// 1. Ambil data siswa beserta nama kelasnya dengan JOIN ke tabel t_kelas_siswa dan t_kelas
 $siswa = mysqli_query($koneksi, "
-    SELECT id, nis, nama 
-    FROM t_siswa 
-    WHERE status_aktif = 1 
-    ORDER BY nama ASC
+    SELECT s.id, s.nis, s.nama, 
+           COALESCE(k.nama, 'Tanpa Kelas') AS nama_kelas 
+    FROM t_siswa s
+    LEFT JOIN t_kelas_siswa ks ON s.id = ks.siswa_id
+    LEFT JOIN t_kelas k ON ks.kelas_id = k.id
+    WHERE s.status_aktif = 1 
+    ORDER BY s.nama ASC
 ");
 
 // 2. Ambil data jenis pelanggaran
@@ -26,45 +37,119 @@ $pelanggaran = mysqli_query($koneksi, "
     ORDER BY nama ASC
 ");
 
-// 3. Ambil data guru untuk pilihan pelapor
-$guru = mysqli_query($koneksi, "SELECT id, nama FROM t_guru ORDER BY nama ASC");
+// 3. Ambil data guru berdasarkan akun yang sedang login
+$guru_login_id = '';
+$guru_login_nama = $nama_user_login;
+
+if ($user_id_login > 0) {
+
+    $stmt_guru = mysqli_prepare($koneksi, "
+        SELECT id, nama
+        FROM t_guru
+        WHERE user_id = ?
+        LIMIT 1
+    ");
+
+    mysqli_stmt_bind_param($stmt_guru, "i", $user_id_login);
+    mysqli_stmt_execute($stmt_guru);
+
+    mysqli_stmt_bind_result($stmt_guru, $id_guru, $nama_guru_db);
+
+    if (mysqli_stmt_fetch($stmt_guru)) {
+        $guru_login_id = $id_guru;
+        $guru_login_nama = $nama_guru_db;
+    }
+
+    mysqli_stmt_close($stmt_guru);
+}
+
+// Pastikan akun login sudah terhubung dengan data guru
+if (empty($guru_login_id)) {
+    $pesan = "Akun login ini belum terhubung dengan data guru. Silakan hubungi admin.";
+}
 
 // 4. Ambil tahun ajaran yang aktif
-$sql_ta = mysqli_query($koneksi, "SELECT id FROM t_tahun_ajaran WHERE status_aktif = 1 LIMIT 1");
+$sql_ta = mysqli_query($koneksi, "
+    SELECT id
+    FROM t_tahun_ajaran
+    WHERE status_aktif = 1
+    LIMIT 1
+");
+
 $data_ta = mysqli_fetch_assoc($sql_ta);
 $tahun_ajaran_id = $data_ta['id'] ?? 1;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($guru_login_id)) {
+
     $tanggal = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
     $siswa_id = mysqli_real_escape_string($koneksi, $_POST['siswa_id']);
     $pelanggaran_id = mysqli_real_escape_string($koneksi, $_POST['pelanggaran_id']);
-    $guru_id = mysqli_real_escape_string($koneksi, $_POST['guru_id']);
+
+    // Guru ID otomatis berdasarkan akun yang sedang login
+    // Tidak mengambil guru_id dari input form
+    $guru_id = $guru_login_id;
+
     $keterangan = mysqli_real_escape_string($koneksi, $_POST['keterangan']);
 
     // Ambil detail siswa
-    $q_siswa = mysqli_query($koneksi, "SELECT nama FROM t_siswa WHERE id = '$siswa_id'");
+    $q_siswa = mysqli_query($koneksi, "
+        SELECT nama
+        FROM t_siswa
+        WHERE id = '$siswa_id'
+    ");
+
     $d_siswa = mysqli_fetch_assoc($q_siswa);
     $nama_siswa = $d_siswa['nama'] ?? '';
 
     // Ambil detail pelanggaran (nama & poin)
-    $q_pel = mysqli_query($koneksi, "SELECT nama, poin FROM t_pelanggaran WHERE id = '$pelanggaran_id'");
+    $q_pel = mysqli_query($koneksi, "
+        SELECT nama, poin
+        FROM t_pelanggaran
+        WHERE id = '$pelanggaran_id'
+    ");
+
     $d_pel = mysqli_fetch_assoc($q_pel);
     $nama_pelanggaran = $d_pel['nama'] ?? '';
     $poin = $d_pel['poin'] ?? 0;
 
-    // Ambil detail guru (nama)
-    $q_guru = mysqli_query($koneksi, "SELECT nama FROM t_guru WHERE id = '$guru_id'");
-    $d_guru = mysqli_fetch_assoc($q_guru);
-    $nama_guru = $d_guru['nama'] ?? '';
+    // Nama guru pelapor otomatis sesuai akun login
+    $nama_guru = $guru_login_nama;
 
     // Query memasukkan data ke t_pelanggaran_siswa
-    $sql = "INSERT INTO t_pelanggaran_siswa (tahun_ajaran_id, siswa_id, nama_siswa, pelanggaran_id, nama_pelanggaran, poin, guru_id, nama_guru, tanggal, keterangan) 
-            VALUES ('$tahun_ajaran_id', '$siswa_id', '$nama_siswa', '$pelanggaran_id', '$nama_pelanggaran', '$poin', '$guru_id', '$nama_guru', '$tanggal', '$keterangan')";
-    
+    $sql = "INSERT INTO t_pelanggaran_siswa
+            (
+                tahun_ajaran_id,
+                siswa_id,
+                nama_siswa,
+                pelanggaran_id,
+                nama_pelanggaran,
+                poin,
+                guru_id,
+                nama_guru,
+                tanggal,
+                keterangan
+            )
+            VALUES
+            (
+                '$tahun_ajaran_id',
+                '$siswa_id',
+                '$nama_siswa',
+                '$pelanggaran_id',
+                '$nama_pelanggaran',
+                '$poin',
+                '$guru_id',
+                '$nama_guru',
+                '$tanggal',
+                '$keterangan'
+            )";
+
     $query = mysqli_query($koneksi, $sql);
 
     if ($query) {
-        echo "<script>alert('Catatan pelanggaran berhasil disimpan!'); window.location='catatan_pelanggaran.php';</script>";
+        echo "<script>
+            alert('Catatan pelanggaran berhasil disimpan!');
+            window.location='catatan_pelanggaran.php';
+        </script>";
         exit;
     } else {
         $pesan = "Gagal menyimpan: " . mysqli_error($koneksi);
@@ -137,14 +222,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <input type="date" name="tanggal" id="tanggal" class="form-control" value="<?= date('Y-m-d'); ?>" required>
                     </div>
 
-                    <!-- Pilih Siswa -->
+                    <!-- Pilih Siswa (Otomatis Menampilkan NIS - Nama - Kelas) -->
                     <div class="mb-3">
                         <label for="siswa_id" class="form-label fw-semibold">Pilih Siswa</label>
                         <select name="siswa_id" id="siswa_id" class="form-select select2" required>
                             <option value="">-- Pilih Siswa --</option>
                             <?php if ($siswa) { while ($s = mysqli_fetch_assoc($siswa)) { ?>
                                 <option value="<?= (int)$s['id']; ?>">
-                                    <?= htmlspecialchars($s['nis'] . ' - ' . $s['nama']); ?>
+                                    <?= htmlspecialchars($s['nis'] . ' - ' . $s['nama'] . ' (' . $s['nama_kelas'] . ')'); ?>
                                 </option>
                             <?php }} ?>
                         </select>
@@ -163,17 +248,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </select>
                     </div>
 
-                    <!-- Pelapor / Guru -->
+                    <!-- Pelapor / Guru (Otomatis sesuai akun login) -->
                     <div class="mb-3">
-                        <label for="guru_id" class="form-label fw-semibold">Pelapor / Guru</label>
-                        <select name="guru_id" id="guru_id" class="form-select select2" required>
-                            <option value="">-- Pilih Guru Pelapor --</option>
-                            <?php if ($guru) { while ($g = mysqli_fetch_assoc($guru)) { ?>
-                                <option value="<?= (int)$g['id']; ?>">
-                                    <?= htmlspecialchars($g['nama']); ?>
-                                </option>
-                            <?php }} ?>
-                        </select>
+                        <label class="form-label fw-semibold">Pelapor / Guru</label>
+                        <input type="text" class="form-control bg-light"
+                               value="<?= htmlspecialchars($guru_login_nama); ?>" readonly>
+                        <input type="hidden" name="guru_id"
+                               value="<?= (int)$guru_login_id; ?>">
                     </div>
 
                     <!-- Keterangan Tambahan -->
@@ -185,7 +266,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <!-- Tombol Aksi -->
                     <div class="d-flex gap-2">
                         <a href="catatan_pelanggaran.php" class="btn btn-secondary px-4">Kembali</a>
-                        <button type="submit" class="btn btn-primary px-4">Simpan Catatan</button>
+                        <button type="submit" class="btn btn-primary px-4"
+                                <?= empty($guru_login_id) ? 'disabled' : ''; ?>>
+                            Simpan Catatan
+                        </button>
                     </div>
 
                 </form>

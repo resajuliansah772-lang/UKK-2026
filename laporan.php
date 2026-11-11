@@ -5,24 +5,33 @@ include "includes/cek_session.php";
 include "config/koneksi.php";
 
 $halaman = 'laporan';
-$namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
+$namaUser = htmlspecialchars($_SESSION['name'] ?? $_SESSION['nama'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
 $roleUser = $_SESSION['role'] ?? 'guru';
+
+// Filter data berdasarkan guru yang login jika rolenya bukan admin
+$filter_guru = "";
+if ($roleUser != 'admin') {
+    $filter_guru = " WHERE ps.nama_guru = '" . mysqli_real_escape_string($koneksi, $namaUser) . "' ";
+}
 
 // =====================================
 // EXPORT LAPORAN KE EXCEL (CSV)
 // =====================================
 if (isset($_GET['export']) && $_GET['export'] == 'excel') {
-    $sql_export = mysqli_query($koneksi, "
-        SELECT id, tanggal, nama_siswa, nama_pelanggaran, poin, keterangan
-        FROM t_pelanggaran_siswa
-        ORDER BY tanggal DESC, id DESC
-    ");
+    $sql_export_query = "
+        SELECT ps.id, ps.tanggal, ps.nama_siswa, ps.nama_pelanggaran, ps.poin, ps.keterangan
+        FROM t_pelanggaran_siswa ps
+        $filter_guru
+        ORDER BY ps.tanggal DESC, ps.id DESC
+    ";
+    
+    $sql_export = mysqli_query($koneksi, $sql_export_query);
 
     if (!$sql_export) {
         die("Gagal export: " . mysqli_error($koneksi));
     }
 
-    $nama_file = "Laporan_Pelanggaran_Siswa_" . date('Y-m-d') . ".csv";
+    $nama_file = "Laporan_Pelanggaran_" . preg_replace('/[^a-zA-Z0-9]/', '_', $namaUser) . "_" . date('Y-m-d') . ".csv";
 
     header('Content-Type: text/csv; charset=UTF-8');
     header('Content-Disposition: attachment; filename="' . $nama_file . '"');
@@ -52,9 +61,10 @@ if (isset($_GET['export']) && $_GET['export'] == 'excel') {
 // MENGAMBIL DATA LAPORAN
 // =====================================
 $query = mysqli_query($koneksi, "
-    SELECT id, tanggal, nama_siswa, nama_pelanggaran, poin, keterangan
-    FROM t_pelanggaran_siswa
-    ORDER BY tanggal DESC, id DESC
+    SELECT ps.id, ps.tanggal, ps.nama_siswa, ps.nama_pelanggaran, ps.poin, ps.keterangan
+    FROM t_pelanggaran_siswa ps
+    $filter_guru
+    ORDER BY ps.tanggal DESC, ps.id DESC
 ");
 
 if (!$query) {
@@ -130,7 +140,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                     <li class="nav-item"><a href="data_guru.php" class="nav-link text-white"><i class="bi bi-person-badge me-2"></i> Data Guru</a></li>
                     <li class="nav-item"><a href="kelas.php" class="nav-link text-white"><i class="bi bi-door-open me-2"></i> Kelas</a></li>
                     <li class="nav-item"><a href="tahun_ajaran.php" class="nav-link text-white"><i class="bi bi-calendar-range me-2"></i> Tahun Ajaran</a></li>
-                    <li class="nav-item"><a href="penempatan_siswa.php" class="nav-link text-white"><i class="bi bi-journal-check me-2"></i> Penempatan Siswa</a></li>
+                    <li class="nav-item"><a href="penepatan_siswa.php" class="nav-link text-white"><i class="bi bi-journal-check me-2"></i> Penempatan Siswa</a></li>
                     <li class="nav-item"><a href="wali_kelas.php" class="nav-link text-white"><i class="bi bi-person-workspace me-2"></i> Wali Kelas</a></li>
                     <li class="nav-item"><a href="kategori_pelanggaran.php" class="nav-link text-white"><i class="bi bi-tags me-2"></i> Kategori Pelanggaran</a></li>
                     <li class="nav-item"><a href="jenis_pelanggaran.php" class="nav-link text-white"><i class="bi bi-list-task me-2"></i> Jenis Pelanggaran</a></li>
@@ -160,7 +170,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
             <div class="card shadow-sm p-4 bg-white mb-4">
                 <h2>Laporan Pelanggaran Siswa</h2>
-                <p class="text-muted mb-0">Kelola dan lihat laporan data pelanggaran siswa.</p>
+                <p class="text-muted mb-0">Kelola dan lihat laporan data pelanggaran siswa (<?= htmlspecialchars($namaUser); ?>).</p>
             </div>
 
             <!-- RINGKASAN -->
@@ -227,7 +237,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                     </div>
 
                     <?php if ($total_data == 0): ?>
-                        <div class="alert alert-info mt-3 mb-0">Belum ada data pelanggaran siswa.</div>
+                        <div class="alert alert-info mt-3 mb-0">Belum ada data pelanggaran siswa untuk akun ini.</div>
                     <?php endif; ?>
                 </div>
             </div>
