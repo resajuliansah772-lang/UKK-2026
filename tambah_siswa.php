@@ -192,13 +192,13 @@ $halaman = 'data_siswa';
                                 type="text"
                                 name="nis"
                                 class="form-control"
-                                placeholder="Masukkan NIS (15 digit)"
-                                maxlength="15"
-                                minlength="15"
-                                pattern="[0-9]{15}"
+                                placeholder="Masukkan NIS (10 digit)"
+                                maxlength="10"
+                                minlength="10"
+                                pattern="[0-9]{10}"
                                 inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 15)"
-                                title="NIS harus terdiri dari 15 digit angka"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
+                                title="NIS harus terdiri dari 10 digit angka"
                                 required
                             >
 
