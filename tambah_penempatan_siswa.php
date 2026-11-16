@@ -1,6 +1,5 @@
 
 <?php
-
 session_start();
 
 include "includes/cek_session.php";
@@ -9,7 +8,9 @@ include "config/koneksi.php";
 $halaman = 'penepatan_siswa';
 $pesan = "";
 
-// Ambil data siswa aktif
+// ========================================
+// AMBIL DATA SISWA AKTIF
+// ========================================
 $query_siswa = mysqli_query($koneksi, "
     SELECT id, nis, nama
     FROM t_siswa
@@ -21,10 +22,13 @@ if (!$query_siswa) {
     die("Gagal mengambil data siswa: " . mysqli_error($koneksi));
 }
 
-// Ambil data tahun ajaran
+// ========================================
+// AMBIL TAHUN AJARAN YANG AKTIF SAJA
+// ========================================
 $query_tahun = mysqli_query($koneksi, "
     SELECT id, nama
     FROM t_tahun_ajaran
+    WHERE status_aktif = 1
     ORDER BY id DESC
 ");
 
@@ -32,7 +36,9 @@ if (!$query_tahun) {
     die("Gagal mengambil data tahun ajaran: " . mysqli_error($koneksi));
 }
 
-// Ambil data kelas
+// ========================================
+// AMBIL DATA KELAS
+// ========================================
 $query_kelas = mysqli_query($koneksi, "
     SELECT id, nama, tingkat, jurusan
     FROM t_kelas
@@ -43,7 +49,9 @@ if (!$query_kelas) {
     die("Gagal mengambil data kelas: " . mysqli_error($koneksi));
 }
 
-// Proses penyimpanan
+// ========================================
+// PROSES SIMPAN PENEMPATAN SISWA
+// ========================================
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $siswa_id = filter_input(INPUT_POST, "siswa_id", FILTER_VALIDATE_INT);
@@ -51,6 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $kelas_id = filter_input(INPUT_POST, "kelas_id", FILTER_VALIDATE_INT);
 
     $tanggal_mulai = $_POST['tanggal_mulai'] ?? '';
+
     $tanggal_selesai = !empty($_POST['tanggal_selesai'])
         ? $_POST['tanggal_selesai']
         : null;
@@ -67,50 +76,97 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $pesan = "Tanggal mulai wajib diisi.";
 
+    } elseif (!in_array($status_aktif, [0, 1], true)) {
+
+        $pesan = "Status penempatan tidak valid.";
+
     } else {
 
-        $stmt = mysqli_prepare(
+        // Pastikan siswa yang dipilih masih aktif
+        $cek_siswa = mysqli_prepare(
             $koneksi,
-            "INSERT INTO t_kelas_siswa
-            (siswa_id, kelas_id, tahun_ajaran_id, tanggal_mulai, tanggal_selesai, status_aktif)
-            VALUES (?, ?, ?, ?, ?, ?)"
+            "SELECT id FROM t_siswa
+             WHERE id = ? AND status_aktif = 1"
         );
 
-        if ($stmt) {
+        mysqli_stmt_bind_param($cek_siswa, "i", $siswa_id);
+        mysqli_stmt_execute($cek_siswa);
+        $hasil_siswa = mysqli_stmt_get_result($cek_siswa);
+        $siswa_valid = mysqli_num_rows($hasil_siswa) > 0;
+        mysqli_stmt_close($cek_siswa);
 
-            mysqli_stmt_bind_param(
-                $stmt,
-                "iiissi",
-                $siswa_id,
-                $kelas_id,
-                $tahun_ajaran_id,
-                $tanggal_mulai,
-                $tanggal_selesai,
-                $status_aktif
-            );
+        // Pastikan tahun ajaran yang dipilih masih aktif
+        $cek_tahun = mysqli_prepare(
+            $koneksi,
+            "SELECT id FROM t_tahun_ajaran
+             WHERE id = ? AND status_aktif = 1"
+        );
 
-            if (mysqli_stmt_execute($stmt)) {
+        mysqli_stmt_bind_param($cek_tahun, "i", $tahun_ajaran_id);
+        mysqli_stmt_execute($cek_tahun);
+        $hasil_tahun = mysqli_stmt_get_result($cek_tahun);
+        $tahun_valid = mysqli_num_rows($hasil_tahun) > 0;
+        mysqli_stmt_close($cek_tahun);
 
-                mysqli_stmt_close($stmt);
+        if (!$siswa_valid) {
 
-                header("Location: penepatan_siswa.php?status=berhasil");
-                exit;
+            $pesan = "Siswa tidak ditemukan atau sudah tidak aktif.";
 
-            } else {
+        } elseif (!$tahun_valid) {
 
-                $pesan = "Gagal menyimpan data: " . mysqli_stmt_error($stmt);
-                mysqli_stmt_close($stmt);
-
-            }
+            $pesan = "Tahun ajaran tidak ditemukan atau sudah tidak aktif.";
 
         } else {
 
-            $pesan = "Query gagal diproses: " . mysqli_error($koneksi);
+            $stmt = mysqli_prepare(
+                $koneksi,
+                "INSERT INTO t_kelas_siswa
+                (
+                    siswa_id,
+                    kelas_id,
+                    tahun_ajaran_id,
+                    tanggal_mulai,
+                    tanggal_selesai,
+                    status_aktif
+                )
+                VALUES (?, ?, ?, ?, ?, ?)"
+            );
 
+            if ($stmt) {
+
+                mysqli_stmt_bind_param(
+                    $stmt,
+                    "iiissi",
+                    $siswa_id,
+                    $kelas_id,
+                    $tahun_ajaran_id,
+                    $tanggal_mulai,
+                    $tanggal_selesai,
+                    $status_aktif
+                );
+
+                if (mysqli_stmt_execute($stmt)) {
+
+                    mysqli_stmt_close($stmt);
+
+                    header("Location: penepatan_siswa.php?status=berhasil");
+                    exit;
+
+                } else {
+
+                    $pesan = "Gagal menyimpan data: " . mysqli_stmt_error($stmt);
+                    mysqli_stmt_close($stmt);
+
+                }
+
+            } else {
+
+                $pesan = "Query gagal diproses: " . mysqli_error($koneksi);
+
+            }
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -128,6 +184,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+    <!-- Select2 Bootstrap 5 Theme -->
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 
     <style>
 
@@ -154,6 +216,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .card {
             border: none;
             border-radius: 12px;
+        }
+
+        /* Tampilan Select2 */
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
         }
 
     </style>
@@ -307,10 +378,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 Nama Siswa
                             </label>
 
-                            <select name="siswa_id" class="form-select" required>
+                            <select
+                                name="siswa_id"
+                                id="siswa_id"
+                                class="form-select"
+                                required>
 
                                 <option value="">
-                                    -- Pilih Siswa --
+                                    -- Cari atau Pilih Siswa --
                                 </option>
 
                                 <?php while ($siswa = mysqli_fetch_assoc($query_siswa)): ?>
@@ -326,17 +401,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                         </div>
 
-                        <!-- TAHUN AJARAN -->
+                        <!-- TAHUN AJARAN AKTIF -->
                         <div class="mb-3">
 
                             <label class="form-label fw-semibold">
                                 Tahun Ajaran
                             </label>
 
-                            <select name="tahun_ajaran_id" class="form-select" required>
+                            <select
+                                name="tahun_ajaran_id"
+                                class="form-select"
+                                required>
 
                                 <option value="">
-                                    -- Pilih Tahun Ajaran --
+                                    -- Pilih Tahun Ajaran Aktif --
                                 </option>
 
                                 <?php while ($ta = mysqli_fetch_assoc($query_tahun)): ?>
@@ -358,7 +436,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 Nama Kelas
                             </label>
 
-                            <select name="kelas_id" class="form-select" required>
+                            <select
+                                name="kelas_id"
+                                class="form-select"
+                                required>
 
                                 <option value="">
                                     -- Pilih Kelas --
@@ -414,7 +495,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 Status
                             </label>
 
-                            <select name="status_aktif" class="form-select" required>
+                            <select
+                                name="status_aktif"
+                                class="form-select"
+                                required>
 
                                 <option value="1">
                                     Aktif
@@ -453,7 +537,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </div>
 
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- AKTIFKAN PENCARIAN SISWA -->
+<script>
+$(document).ready(function() {
+
+    $('#siswa_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: '-- Cari Nama atau NIS Siswa --',
+        allowClear: true,
+        width: '100%'
+    });
+
+});
+</script>
 
 </body>
 </html>

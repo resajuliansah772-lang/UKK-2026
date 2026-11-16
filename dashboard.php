@@ -9,24 +9,103 @@ if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
 
 include "config/koneksi.php";
 
+// =====================================
+// IDENTITAS USER LOGIN
+// =====================================
+
 $halaman = 'dashboard';
-$namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
-$roleUser = $_SESSION['role'] ?? 'guru';
+
+$namaUser = htmlspecialchars(
+    $_SESSION['name'] ?? 'Pengguna',
+    ENT_QUOTES,
+    'UTF-8'
+);
+
+$roleUser = strtolower(trim($_SESSION['role'] ?? 'guru'));
+
+$id_user_login = (int) (
+    $_SESSION['id'] ??
+    $_SESSION['user_id'] ??
+    0
+);
+
+$isAdmin = ($roleUser === 'admin');
+
+// =====================================
+// CEK HAK AKSES WALI KELAS
+// =====================================
+
+$is_wali_kelas_aktif = false;
+
+if (!$isAdmin && $id_user_login > 0) {
+
+    $stmtWali = mysqli_prepare($koneksi, "
+        SELECT wk.id
+        FROM t_guru g
+        INNER JOIN t_wali_kelas wk
+            ON wk.guru_id = g.id
+        WHERE g.user_id = ?
+          AND wk.status_aktif = 1
+        LIMIT 1
+    ");
+
+    if (!$stmtWali) {
+        die("Gagal mengecek wali kelas: " . mysqli_error($koneksi));
+    }
+
+    mysqli_stmt_bind_param(
+        $stmtWali,
+        "i",
+        $id_user_login
+    );
+
+    mysqli_stmt_execute($stmtWali);
+
+    $resultWali = mysqli_stmt_get_result($stmtWali);
+
+    if ($resultWali && mysqli_num_rows($resultWali) > 0) {
+        $is_wali_kelas_aktif = true;
+    }
+
+    mysqli_stmt_close($stmtWali);
+}
+
+// Admin dan wali kelas aktif boleh melihat laporan
+$tampilkan_menu_laporan = (
+    $isAdmin || $is_wali_kelas_aktif
+);
 
 // =====================================
 // STATISTIK UTAMA
 // =====================================
 
-$querySiswa = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_siswa WHERE status_aktif = 1");
+$querySiswa = mysqli_query($koneksi, "
+    SELECT COUNT(*) AS total
+    FROM t_siswa
+    WHERE status_aktif = 1
+");
+
 $jumlahSiswa = mysqli_fetch_assoc($querySiswa)['total'] ?? 0;
 
-$queryGuru = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_guru");
+$queryGuru = mysqli_query($koneksi, "
+    SELECT COUNT(*) AS total
+    FROM t_guru
+");
+
 $jumlahGuru = mysqli_fetch_assoc($queryGuru)['total'] ?? 0;
 
-$queryKelas = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_kelas");
+$queryKelas = mysqli_query($koneksi, "
+    SELECT COUNT(*) AS total
+    FROM t_kelas
+");
+
 $jumlahKelas = mysqli_fetch_assoc($queryKelas)['total'] ?? 0;
 
-$queryPelanggaran = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM t_pelanggaran_siswa");
+$queryPelanggaran = mysqli_query($koneksi, "
+    SELECT COUNT(*) AS total
+    FROM t_pelanggaran_siswa
+");
+
 $jumlahPelanggaran = mysqli_fetch_assoc($queryPelanggaran)['total'] ?? 0;
 
 
@@ -142,8 +221,9 @@ if (!$queryGrafik) {
 }
 
 while ($row = mysqli_fetch_assoc($queryGrafik)) {
+
     if (isset($dataGrafik[$row['bulan']])) {
-        $dataGrafik[$row['bulan']] = (int)$row['jumlah'];
+        $dataGrafik[$row['bulan']] = (int) $row['jumlah'];
     }
 }
 
@@ -155,6 +235,7 @@ $dataGrafik = array_values($dataGrafik);
 <html lang="id">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -165,6 +246,7 @@ $dataGrafik = array_values($dataGrafik);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
+
         body {
             background-color: #f4f6f9;
         }
@@ -205,6 +287,7 @@ $dataGrafik = array_values($dataGrafik);
         .sidebar {
             background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
         }
+
     </style>
 
 </head>
@@ -212,9 +295,13 @@ $dataGrafik = array_values($dataGrafik);
 <body>
 
 <div class="container-fluid">
+
     <div class="row">
 
+        <!-- ================================= -->
         <!-- SIDEBAR -->
+        <!-- ================================= -->
+
         <div class="col-md-3 col-lg-2 sidebar min-vh-100 p-3">
 
             <h4 class="text-white mb-4 fw-bold fs-5 px-2">
@@ -222,73 +309,86 @@ $dataGrafik = array_values($dataGrafik);
                 Pelanggaran Siswa
             </h4>
 
-            <?php if ($roleUser == 'admin') { ?>
+            <?php if ($isAdmin) { ?>
+
+                <!-- MENU ADMIN -->
 
                 <ul class="nav nav-pills flex-column gap-1">
 
                     <li class="nav-item">
                         <a href="dashboard.php" class="nav-link active">
-                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Dashboard
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="data_siswa.php" class="nav-link text-white">
-                            <i class="bi bi-people me-2"></i> Data Siswa
+                            <i class="bi bi-people me-2"></i>
+                            Data Siswa
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="data_guru.php" class="nav-link text-white">
-                            <i class="bi bi-person-badge me-2"></i> Data Guru
+                            <i class="bi bi-person-badge me-2"></i>
+                            Data Guru
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="kelas.php" class="nav-link text-white">
-                            <i class="bi bi-door-open me-2"></i> Kelas
+                            <i class="bi bi-door-open me-2"></i>
+                            Kelas
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="tahun_ajaran.php" class="nav-link text-white">
-                            <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
+                            <i class="bi bi-calendar-range me-2"></i>
+                            Tahun Ajaran
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a href="penempatan_siswa.php" class="nav-link text-white">
-                            <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
+                        <a href="penepatan_siswa.php" class="nav-link text-white">
+                            <i class="bi bi-journal-check me-2"></i>
+                            Penempatan Siswa
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="wali_kelas.php" class="nav-link text-white">
-                            <i class="bi bi-person-workspace me-2"></i> Wali Kelas
+                            <i class="bi bi-person-workspace me-2"></i>
+                            Wali Kelas
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="kategori_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
+                            <i class="bi bi-tags me-2"></i>
+                            Kategori Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="jenis_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
+                            <i class="bi bi-list-task me-2"></i>
+                            Jenis Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="laporan.php" class="nav-link text-white">
-                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Laporan
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="aboutme.php" class="nav-link text-white">
-                            <i class="bi bi-info-circle me-2"></i> About Me
+                            <i class="bi bi-info-circle me-2"></i>
+                            About Me
                         </a>
                     </li>
 
@@ -296,7 +396,8 @@ $dataGrafik = array_values($dataGrafik);
 
                     <li class="nav-item">
                         <a href="logout.php" class="nav-link text-danger">
-                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            <i class="bi bi-box-arrow-right me-2"></i>
+                            Logout
                         </a>
                     </li>
 
@@ -304,41 +405,55 @@ $dataGrafik = array_values($dataGrafik);
 
             <?php } else { ?>
 
+                <!-- MENU GURU DAN WALI KELAS -->
+
                 <ul class="nav nav-pills flex-column gap-1">
 
                     <li class="nav-item">
                         <a href="dashboard.php" class="nav-link active">
-                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Dashboard
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="catatan_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-journal-text me-2"></i> Catatan Pelanggaran
+                            <i class="bi bi-journal-text me-2"></i>
+                            Catatan Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="tindakan.php" class="nav-link text-white">
-                            <i class="bi bi-hammer me-2"></i> Tindakan
+                            <i class="bi bi-hammer me-2"></i>
+                            Tindakan
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a href="laporan.php" class="nav-link text-white">
-                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
-                        </a>
-                    </li>
+                    <!-- LAPORAN KHUSUS WALI KELAS -->
+
+                    <?php if ($is_wali_kelas_aktif) { ?>
+
+                        <li class="nav-item">
+                            <a href="laporan.php" class="nav-link text-white">
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                Laporan
+                            </a>
+                        </li>
+
+                    <?php } ?>
 
                     <li class="nav-item">
                         <a href="riwayat.php" class="nav-link text-white">
-                            <i class="bi bi-clock-history me-2"></i> Riwayat
+                            <i class="bi bi-clock-history me-2"></i>
+                            Riwayat
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="rekap_poin.php" class="nav-link text-white">
-                            <i class="bi bi-award me-2"></i> Rekap Poin
+                            <i class="bi bi-award me-2"></i>
+                            Rekap Poin
                         </a>
                     </li>
 
@@ -346,7 +461,8 @@ $dataGrafik = array_values($dataGrafik);
 
                     <li class="nav-item">
                         <a href="logout.php" class="nav-link text-danger">
-                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            <i class="bi bi-box-arrow-right me-2"></i>
+                            Logout
                         </a>
                     </li>
 
@@ -357,40 +473,61 @@ $dataGrafik = array_values($dataGrafik);
         </div>
 
 
+        <!-- ================================= -->
         <!-- KONTEN UTAMA -->
+        <!-- ================================= -->
+
         <main class="col-md-9 col-lg-10 p-4">
 
             <!-- HEADER -->
+
             <div class="d-flex justify-content-between align-items-center bg-white p-4 rounded-4 shadow-sm mb-4">
 
                 <div>
+
                     <h3 class="fw-bold text-dark mb-1">
                         Dashboard Utama
                     </h3>
 
                     <p class="text-muted mb-0">
                         Selamat datang kembali,
+
                         <span class="fw-semibold text-primary">
                             <?= $namaUser; ?>
                         </span>!
                     </p>
+
                 </div>
 
                 <div>
+
                     <span class="badge bg-primary-subtle text-primary border px-3 py-2 fs-6 text-uppercase">
+
                         <i class="bi bi-shield-check me-1"></i>
+
                         Role: <?= htmlspecialchars($roleUser); ?>
+
+                        <?php if ($is_wali_kelas_aktif && !$isAdmin) { ?>
+                            (Wali Kelas)
+                        <?php } ?>
+
                     </span>
+
                 </div>
 
             </div>
 
 
+            <!-- ================================= -->
             <!-- STATISTIK -->
+            <!-- ================================= -->
+
             <div class="row g-4 mb-4">
 
                 <div class="col-md-3 col-sm-6">
+
                     <div class="card shadow-sm border-start border-primary border-4">
+
                         <div class="card-body d-flex align-items-center">
 
                             <div class="icon-box bg-primary bg-opacity-10 text-primary me-3">
@@ -398,17 +535,26 @@ $dataGrafik = array_values($dataGrafik);
                             </div>
 
                             <div>
-                                <span class="text-muted small fw-bold">Total Siswa</span>
-                                <h3 class="fw-bold mb-0"><?= $jumlahSiswa; ?></h3>
+                                <span class="text-muted small fw-bold">
+                                    Total Siswa
+                                </span>
+
+                                <h3 class="fw-bold mb-0">
+                                    <?= $jumlahSiswa; ?>
+                                </h3>
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
 
 
                 <div class="col-md-3 col-sm-6">
+
                     <div class="card shadow-sm border-start border-success border-4">
+
                         <div class="card-body d-flex align-items-center">
 
                             <div class="icon-box bg-success bg-opacity-10 text-success me-3">
@@ -416,17 +562,26 @@ $dataGrafik = array_values($dataGrafik);
                             </div>
 
                             <div>
-                                <span class="text-muted small fw-bold">Total Guru</span>
-                                <h3 class="fw-bold mb-0"><?= $jumlahGuru; ?></h3>
+                                <span class="text-muted small fw-bold">
+                                    Total Guru
+                                </span>
+
+                                <h3 class="fw-bold mb-0">
+                                    <?= $jumlahGuru; ?>
+                                </h3>
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
 
 
                 <div class="col-md-3 col-sm-6">
+
                     <div class="card shadow-sm border-start border-warning border-4">
+
                         <div class="card-body d-flex align-items-center">
 
                             <div class="icon-box bg-warning bg-opacity-10 text-warning me-3">
@@ -434,17 +589,26 @@ $dataGrafik = array_values($dataGrafik);
                             </div>
 
                             <div>
-                                <span class="text-muted small fw-bold">Total Kelas</span>
-                                <h3 class="fw-bold mb-0"><?= $jumlahKelas; ?></h3>
+                                <span class="text-muted small fw-bold">
+                                    Total Kelas
+                                </span>
+
+                                <h3 class="fw-bold mb-0">
+                                    <?= $jumlahKelas; ?>
+                                </h3>
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
 
 
                 <div class="col-md-3 col-sm-6">
+
                     <div class="card shadow-sm border-start border-danger border-4">
+
                         <div class="card-body d-flex align-items-center">
 
                             <div class="icon-box bg-danger bg-opacity-10 text-danger me-3">
@@ -452,21 +616,32 @@ $dataGrafik = array_values($dataGrafik);
                             </div>
 
                             <div>
-                                <span class="text-muted small fw-bold">Pelanggaran</span>
-                                <h3 class="fw-bold mb-0"><?= $jumlahPelanggaran; ?></h3>
+                                <span class="text-muted small fw-bold">
+                                    Pelanggaran
+                                </span>
+
+                                <h3 class="fw-bold mb-0">
+                                    <?= $jumlahPelanggaran; ?>
+                                </h3>
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
 
             </div>
 
 
+            <!-- ================================= -->
             <!-- GRAFIK DAN TOP 5 -->
+            <!-- ================================= -->
+
             <div class="row g-4 mb-4">
 
                 <!-- GRAFIK -->
+
                 <div class="col-lg-7">
 
                     <div class="card shadow-sm p-4 bg-white h-100">
@@ -496,6 +671,7 @@ $dataGrafik = array_values($dataGrafik);
 
 
                 <!-- TOP 5 -->
+
                 <div class="col-lg-5">
 
                     <div class="card shadow-sm p-4 bg-white h-100">
@@ -519,11 +695,13 @@ $dataGrafik = array_values($dataGrafik);
                             <table class="table table-sm table-hover align-middle mb-0">
 
                                 <thead class="table-light">
+
                                     <tr>
                                         <th class="text-center" width="15%">No</th>
                                         <th>Nama Siswa</th>
                                         <th class="text-center">Jumlah Pelanggaran</th>
                                     </tr>
+
                                 </thead>
 
                                 <tbody>
@@ -547,7 +725,8 @@ $dataGrafik = array_values($dataGrafik);
                                                 <td class="text-center">
 
                                                     <?php
-                                                    $jumlah = (int)$top['jumlah_pelanggaran'];
+
+                                                    $jumlah = (int) $top['jumlah_pelanggaran'];
 
                                                     if ($jumlah >= 8) {
                                                         $warna = 'danger';
@@ -556,6 +735,7 @@ $dataGrafik = array_values($dataGrafik);
                                                     } else {
                                                         $warna = 'success';
                                                     }
+
                                                     ?>
 
                                                     <span class="badge bg-<?= $warna; ?>-subtle text-<?= $warna; ?> px-2 py-1">
@@ -591,7 +771,10 @@ $dataGrafik = array_values($dataGrafik);
             </div>
 
 
+            <!-- ================================= -->
             <!-- PELANGGARAN TERBARU -->
+            <!-- ================================= -->
+
             <div class="row g-4">
 
                 <div class="col-12">
@@ -601,14 +784,24 @@ $dataGrafik = array_values($dataGrafik);
                         <div class="d-flex justify-content-between align-items-center mb-3">
 
                             <h5 class="fw-bold text-dark m-0">
+
                                 <i class="bi bi-clock-history text-primary me-2"></i>
+
                                 Pelanggaran Terbaru
+
                             </h5>
 
-                            <a href="laporan.php" class="btn btn-sm btn-primary">
-                                Lihat Semua
-                                <i class="bi bi-arrow-right ms-1"></i>
-                            </a>
+                            <?php if ($tampilkan_menu_laporan) { ?>
+
+                                <a href="laporan.php" class="btn btn-sm btn-primary">
+
+                                    Lihat Semua
+
+                                    <i class="bi bi-arrow-right ms-1"></i>
+
+                                </a>
+
+                            <?php } ?>
 
                         </div>
 
@@ -621,12 +814,19 @@ $dataGrafik = array_values($dataGrafik);
                                 <thead class="table-dark">
 
                                     <tr>
+
                                         <th class="text-center" width="5%">No</th>
+
                                         <th width="15%">Tanggal</th>
+
                                         <th width="20%">Nama Siswa</th>
+
                                         <th width="25%">Jenis Pelanggaran</th>
+
                                         <th class="text-center" width="10%">Poin</th>
+
                                         <th width="25%">Keterangan</th>
+
                                     </tr>
 
                                 </thead>
@@ -662,8 +862,13 @@ $dataGrafik = array_values($dataGrafik);
                                                 <td class="text-center">
 
                                                     <?php
-                                                    $poin = (int)$data['poin'];
-                                                    $warnaPoin = ($poin >= 15) ? 'danger' : 'warning';
+
+                                                    $poin = (int) $data['poin'];
+
+                                                    $warnaPoin = ($poin >= 15)
+                                                        ? 'danger'
+                                                        : 'warning';
+
                                                     ?>
 
                                                     <span class="badge bg-<?= $warnaPoin; ?>">
@@ -683,9 +888,11 @@ $dataGrafik = array_values($dataGrafik);
                                     <?php } else { ?>
 
                                         <tr>
+
                                             <td colspan="6" class="text-center text-muted py-4">
                                                 Belum ada pelanggaran terbaru.
                                             </td>
+
                                         </tr>
 
                                     <?php } ?>
@@ -705,16 +912,23 @@ $dataGrafik = array_values($dataGrafik);
         </main>
 
     </div>
+
 </div>
 
 
+<!-- ================================= -->
 <!-- JAVASCRIPT -->
+<!-- ================================= -->
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 
-const ctxLine = document.getElementById('chartPelanggaranLine').getContext('2d');
+const ctxLine = document
+    .getElementById('chartPelanggaranLine')
+    .getContext('2d');
 
 let lineGradient = ctxLine.createLinearGradient(0, 0, 0, 270);
 

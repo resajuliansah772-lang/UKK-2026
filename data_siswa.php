@@ -1,3 +1,4 @@
+
 <?php
 
 session_start();
@@ -14,10 +15,8 @@ $halaman = 'siswa';
 $namaUser = htmlspecialchars($_SESSION['name'] ?? 'Pengguna', ENT_QUOTES, 'UTF-8');
 $roleUser = $_SESSION['role'] ?? 'guru';
 
-// Ambil data siswa aktif
-$sql = "SELECT * FROM t_siswa
-        WHERE status_aktif = 1
-        ORDER BY nama ASC";
+// Ambil SEMUA data siswa, baik aktif maupun tidak aktif
+$sql = "SELECT * FROM t_siswa ORDER BY nama ASC";
 
 $query = mysqli_query($koneksi, $sql);
 
@@ -31,6 +30,7 @@ if (!$query) {
 <html lang="id">
 
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -40,7 +40,7 @@ if (!$query) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
 
-    <!-- Bootstrap Icons CSS -->
+    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
           rel="stylesheet">
 
@@ -49,13 +49,18 @@ if (!$query) {
           rel="stylesheet">
 
     <style>
-        body { background-color: #f4f6f9; }
+
+        body {
+            background-color: #f4f6f9;
+        }
+
         .nav-link {
             transition: all 0.3s ease;
             border-radius: 6px;
         }
 
-        .nav-link:hover, .nav-link.active {
+        .nav-link:hover,
+        .nav-link.active {
             background-color: #0d6efd !important;
             color: white !important;
             padding-left: 15px;
@@ -74,21 +79,31 @@ if (!$query) {
             width: 100%;
         }
 
-        .card { border: none; border-radius: 12px; }
-        .sidebar { background: linear-gradient(180deg, #212529 0%, #1a1e21 100%); }
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
+        }
+
     </style>
+
 </head>
 
 <body>
 
 <div class="container-fluid">
+
     <div class="row">
 
         <!-- SIDEBAR -->
         <div class="col-md-3 col-lg-2 sidebar min-vh-100 p-3">
 
             <h4 class="text-white mb-4 fw-bold fs-5 px-2">
-                <i class="bi bi-shield-exclamation text-primary me-2"></i> Pelanggaran Siswa
+                <i class="bi bi-shield-exclamation text-primary me-2"></i>
+                Pelanggaran Siswa
             </h4>
 
             <!-- MENU ADMIN -->
@@ -97,78 +112,67 @@ if (!$query) {
             <ul class="nav nav-pills flex-column gap-1">
 
                 <li class="nav-item">
-                    <a href="dashboard.php"
-                       class="nav-link text-white">
+                    <a href="dashboard.php" class="nav-link text-white">
                         <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="data_siswa.php"
-                       class="nav-link active">
+                    <a href="data_siswa.php" class="nav-link active">
                         <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="data_guru.php"
-                       class="nav-link text-white">
+                    <a href="data_guru.php" class="nav-link text-white">
                         <i class="bi bi-person-badge me-2"></i> Data Guru
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="kelas.php"
-                       class="nav-link text-white">
+                    <a href="kelas.php" class="nav-link text-white">
                         <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="tahun_ajaran.php"
-                       class="nav-link text-white">
+                    <a href="tahun_ajaran.php" class="nav-link text-white">
                         <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="penepatan_siswa.php"
-                       class="nav-link text-white">
+                    <a href="penepatan_siswa.php" class="nav-link text-white">
                         <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="wali_kelas.php"
-                       class="nav-link text-white">
+                    <a href="wali_kelas.php" class="nav-link text-white">
                         <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="kategori_pelanggaran.php"
-                       class="nav-link text-white">
+                    <a href="kategori_pelanggaran.php" class="nav-link text-white">
                         <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="jenis_pelanggaran.php"
-                       class="nav-link text-white">
+                    <a href="jenis_pelanggaran.php" class="nav-link text-white">
                         <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="laporan.php"
-                       class="nav-link text-white">
+                    <a href="laporan.php" class="nav-link text-white">
                         <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="aboutme.php"
-                       class="nav-link text-white">
+                    <a href="aboutme.php" class="nav-link text-white">
                         <i class="bi bi-info-circle me-2"></i> About Me
                     </a>
                 </li>
@@ -176,8 +180,7 @@ if (!$query) {
                 <hr class="text-secondary my-3">
 
                 <li class="nav-item">
-                    <a href="logout.php"
-                       class="nav-link text-danger">
+                    <a href="logout.php" class="nav-link text-danger">
                         <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
@@ -193,22 +196,19 @@ if (!$query) {
             <ul class="nav nav-pills flex-column gap-1">
 
                 <li class="nav-item">
-                    <a href="dashboard.php"
-                       class="nav-link text-white">
+                    <a href="dashboard.php" class="nav-link text-white">
                         <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="kelas.php"
-                       class="nav-link text-white">
+                    <a href="kelas.php" class="nav-link text-white">
                         <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="laporan.php"
-                       class="nav-link text-white">
+                    <a href="laporan.php" class="nav-link text-white">
                         <i class="bi bi-file-earmark-text me-2"></i> Laporan
                     </a>
                 </li>
@@ -216,8 +216,7 @@ if (!$query) {
                 <hr class="text-secondary my-3">
 
                 <li class="nav-item">
-                    <a href="logout.php"
-                       class="nav-link text-danger">
+                    <a href="logout.php" class="nav-link text-danger">
                         <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
@@ -233,22 +232,19 @@ if (!$query) {
             <ul class="nav nav-pills flex-column gap-1">
 
                 <li class="nav-item">
-                    <a href="dashboard.php"
-                       class="nav-link text-white">
+                    <a href="dashboard.php" class="nav-link text-white">
                         <i class="bi bi-speedometer2 me-2"></i> Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="data_siswa.php"
-                       class="nav-link active">
+                    <a href="data_siswa.php" class="nav-link active">
                         <i class="bi bi-people me-2"></i> Data Siswa
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="kelas.php"
-                       class="nav-link text-white">
+                    <a href="kelas.php" class="nav-link text-white">
                         <i class="bi bi-door-open me-2"></i> Kelas
                     </a>
                 </li>
@@ -256,8 +252,7 @@ if (!$query) {
                 <hr class="text-secondary my-3">
 
                 <li class="nav-item">
-                    <a href="logout.php"
-                       class="nav-link text-danger">
+                    <a href="logout.php" class="nav-link text-danger">
                         <i class="bi bi-box-arrow-right me-2"></i> Logout
                     </a>
                 </li>
@@ -282,12 +277,13 @@ if (!$query) {
 
                 <!-- TOMBOL TAMBAH -->
                 <?php if ($_SESSION['role'] == 'admin') { ?>
+
                 <div class="mb-3">
-                    <a href="tambah_siswa.php"
-                       class="btn btn-primary btn-sm">
+                    <a href="tambah_siswa.php" class="btn btn-primary btn-sm">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Siswa
                     </a>
                 </div>
+
                 <?php } ?>
 
 
@@ -359,37 +355,53 @@ if (!$query) {
                                     <?= htmlspecialchars($siswa['alamat'] ?? ''); ?>
                                 </td>
 
+                                <!-- STATUS SISWA -->
                                 <td>
-                                    <span class="badge text-bg-success">
-                                        Aktif
-                                    </span>
+
+                                    <?php if ((int)$siswa['status_aktif'] === 1) { ?>
+
+                                        <span class="badge text-bg-success">
+                                            Aktif
+                                        </span>
+
+                                    <?php } else { ?>
+
+                                        <span class="badge text-bg-danger">
+                                            Tidak Aktif
+                                        </span>
+
+                                    <?php } ?>
+
                                 </td>
 
+                                <!-- AKSI -->
                                 <td>
+
                                     <div class="d-flex gap-1">
 
                                         <?php if ($_SESSION['role'] == 'admin') { ?>
 
-                                        <a
-                                            href="edit_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
-                                            class="btn btn-warning btn-sm">
-                                            Edit
-                                        </a>
+                                            <a
+                                                href="edit_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
+                                                class="btn btn-warning btn-sm">
+                                                Edit
+                                            </a>
 
-                                        <a
-                                            href="hapus_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
-                                            class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Yakin ingin menonaktifkan siswa ini?');">
-                                            Hapus
-                                        </a>
+                                            <a
+                                                href="hapus_siswa.php?id=<?= urlencode((string)$siswa['id']); ?>"
+                                                class="btn btn-danger btn-sm"
+                                                onclick="return confirm('Yakin ingin menghapus data siswa ini secara permanen?');">
+                                                Hapus
+                                            </a>
 
                                         <?php } else { ?>
 
-                                        <span class="text-muted">-</span>
+                                            <span class="text-muted">-</span>
 
                                         <?php } ?>
 
                                     </div>
+
                                 </td>
 
                             </tr>
@@ -407,6 +419,7 @@ if (!$query) {
         </main>
 
     </div>
+
 </div>
 
 
@@ -420,8 +433,10 @@ if (!$query) {
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 
+
 <!-- INISIALISASI DATATABLES -->
 <script>
+
 $(document).ready(function () {
 
     $('#tabelSiswa').DataTable({
@@ -450,8 +465,9 @@ $(document).ready(function () {
         // Urutkan berdasarkan nama siswa
         order: [[3, 'asc']],
 
-        // Pengaturan bahasa Indonesia
+        // Bahasa Indonesia
         language: {
+
             search: "Cari siswa:",
 
             lengthMenu: "Tampilkan _MENU_ data",
@@ -472,11 +488,13 @@ $(document).ready(function () {
                 next: "Selanjutnya",
                 previous: "Sebelumnya"
             }
+
         }
 
     });
 
 });
+
 </script>
 
 </body>
