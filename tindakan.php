@@ -82,78 +82,125 @@ while ($kolom = mysqli_fetch_assoc($hasil_kolom)) {
     $kolom_tersedia[] = $kolom['Field'];
 }
 
+if (!in_array('keterangan', $kolom_tersedia, true)) {
+    die("Kolom keterangan tidak tersedia pada tabel t_pelanggaran_siswa.");
+}
+
 // =====================================
-// PROSES TINDAKAN / SANKSI
+// PROSES TINDAKAN
 // =====================================
 
 $pesan_error = "";
 
 if (isset($_POST['proses_tindakan'])) {
 
-    $id_pelanggaran_siswa = (int) ($_POST['id_pelanggaran_siswa'] ?? 0);
+    $id_pelanggaran_siswa = (int)($_POST['id_pelanggaran_siswa'] ?? 0);
     $jenis_tindakan = trim($_POST['jenis_tindakan'] ?? '');
 
     if ($id_pelanggaran_siswa <= 0 || $jenis_tindakan === '') {
 
         $pesan_error = "Data tindakan tidak boleh kosong.";
 
-    } elseif (!in_array('jenis_tindakan', $kolom_tersedia, true)) {
-
-        $pesan_error = "Kolom jenis_tindakan tidak tersedia pada tabel.";
-
     } else {
 
-        $stmtUpdate = mysqli_prepare($koneksi, "
-            UPDATE t_pelanggaran_siswa
-            SET status = 'Selesai',
-                jenis_tindakan = ?
+        // Ambil keterangan pelanggaran sebelumnya
+        $stmtCek = mysqli_prepare($koneksi, "
+            SELECT keterangan
+            FROM t_pelanggaran_siswa
             WHERE id = ?
               AND (
                   status = 'Pending'
                   OR status = ''
                   OR status IS NULL
               )
+            LIMIT 1
         ");
 
-        if (!$stmtUpdate) {
+        if (!$stmtCek) {
 
-            $pesan_error = "Gagal menyiapkan proses tindakan: " . mysqli_error($koneksi);
+            $pesan_error = "Gagal memeriksa data: " . mysqli_error($koneksi);
 
         } else {
 
-            mysqli_stmt_bind_param(
-                $stmtUpdate,
-                "si",
-                $jenis_tindakan,
-                $id_pelanggaran_siswa
-            );
+            mysqli_stmt_bind_param($stmtCek, "i", $id_pelanggaran_siswa);
+            mysqli_stmt_execute($stmtCek);
 
-            if (mysqli_stmt_execute($stmtUpdate)) {
+            $resultCek = mysqli_stmt_get_result($stmtCek);
+            $dataCek = mysqli_fetch_assoc($resultCek);
 
-                if (mysqli_stmt_affected_rows($stmtUpdate) > 0) {
+            mysqli_stmt_close($stmtCek);
 
-                    mysqli_stmt_close($stmtUpdate);
+            if (!$dataCek) {
 
-                    echo "
-                        <script>
-                            alert('Tindakan berhasil diproses dan masuk ke Riwayat!');
-                            window.location='tindakan.php';
-                        </script>
-                    ";
-
-                    exit;
-
-                } else {
-
-                    $pesan_error = "Data tidak ditemukan atau tindakan sudah diproses.";
-                }
+                $pesan_error = "Data tidak ditemukan atau tindakan sudah diproses.";
 
             } else {
 
-                $pesan_error = "Gagal memproses tindakan: " . mysqli_stmt_error($stmtUpdate);
-            }
+                // Gabungkan keterangan lama dan tindakan
+                $keterangan_lama = trim($dataCek['keterangan'] ?? '');
 
-            mysqli_stmt_close($stmtUpdate);
+                $keterangan_baru = $keterangan_lama;
+
+                if ($keterangan_baru !== '') {
+                    $keterangan_baru .= "\n\n";
+                }
+
+                $keterangan_baru .= "Tindakan/Sanksi: " . $jenis_tindakan;
+
+                // Update status dan keterangan
+                $stmtUpdate = mysqli_prepare($koneksi, "
+                    UPDATE t_pelanggaran_siswa
+                    SET status = 'Selesai',
+                        keterangan = ?
+                    WHERE id = ?
+                      AND (
+                          status = 'Pending'
+                          OR status = ''
+                          OR status IS NULL
+                      )
+                ");
+
+                if (!$stmtUpdate) {
+
+                    $pesan_error = "Gagal menyiapkan proses tindakan: " . mysqli_error($koneksi);
+
+                } else {
+
+                    mysqli_stmt_bind_param(
+                        $stmtUpdate,
+                        "si",
+                        $keterangan_baru,
+                        $id_pelanggaran_siswa
+                    );
+
+                    if (mysqli_stmt_execute($stmtUpdate)) {
+
+                        if (mysqli_stmt_affected_rows($stmtUpdate) > 0) {
+
+                            mysqli_stmt_close($stmtUpdate);
+
+                            echo "
+                                <script>
+                                    alert('Tindakan berhasil diproses dan masuk ke Riwayat!');
+                                    window.location='tindakan.php';
+                                </script>
+                            ";
+
+                            exit;
+
+                        } else {
+
+                            $pesan_error = "Data tidak berhasil diperbarui.";
+                        }
+
+                    } else {
+
+                        $pesan_error = "Gagal memproses tindakan: " . mysqli_stmt_error($stmtUpdate);
+                    }
+
+                    mysqli_stmt_close($stmtUpdate);
+                }
+            }
         }
     }
 }
@@ -214,31 +261,60 @@ while ($row = mysqli_fetch_assoc($query)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Tindakan Pelanggaran - Sistem Informasi Pelanggaran Siswa</title>
+    <title>Tindakan Pelanggaran - Sistem Pelanggaran Siswa</title>
 
-    <!-- BOOTSTRAP CSS -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- BOOTSTRAP ICONS -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-        rel="stylesheet"
-    >
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-    <!-- DATATABLES CSS -->
-    <link
-        href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css"
-        rel="stylesheet"
-    >
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
     <style>
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
 
         body {
             background-color: #f4f6f9;
         }
+
+        /* SIDEBAR TETAP */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+
+            width: 16.666667%;
+            height: 100vh;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            background: linear-gradient(
+                180deg,
+                #212529 0%,
+                #1a1e21 100%
+            );
+
+            z-index: 1000;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #6c757d;
+            border-radius: 10px;
+        }
+
+        /* MENU */
 
         .nav-link {
             transition: all 0.3s ease;
@@ -252,19 +328,101 @@ while ($row = mysqli_fetch_assoc($query)) {
             padding-left: 15px;
         }
 
+        /* KONTEN UTAMA */
+
+        .main-content {
+            margin-left: 16.666667%;
+            width: 83.333333%;
+
+            height: 100vh;
+
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            padding: 24px !important;
+        }
+
         .card {
             border: none;
             border-radius: 12px;
         }
 
-        .sidebar {
-            background: linear-gradient(
-                180deg,
-                #212529 0%,
-                #1a1e21 100%
-            );
+        #tabelTindakan th,
+        #tabelTindakan td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
 
-            min-height: 100vh;
+        /* UKURAN TABLET */
+
+        @media (min-width: 768px) and (max-width: 991.98px) {
+
+            .sidebar {
+                width: 25%;
+            }
+
+            .main-content {
+                margin-left: 25%;
+                width: 75%;
+            }
+
+        }
+
+        /* UKURAN HP */
+
+        @media (max-width: 767.98px) {
+
+            html,
+            body {
+                height: auto;
+                overflow: auto;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                min-height: auto;
+                overflow: visible;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                padding: 16px !important;
+            }
+
+        }
+
+        /* CETAK */
+
+        @media print {
+
+            html,
+            body {
+                height: auto;
+                overflow: visible;
+            }
+
+            .sidebar,
+            .no-print,
+            .dt-search,
+            .dt-length,
+            .dt-paging,
+            .dt-info {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                padding: 0 !important;
+            }
+
         }
 
     </style>
@@ -279,7 +437,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
         <!-- SIDEBAR -->
 
-        <div class="col-md-3 col-lg-2 sidebar p-3">
+        <div class="sidebar p-3">
 
             <h4 class="text-white mb-4 fw-bold fs-5 px-2">
                 <i class="bi bi-shield-exclamation text-primary me-2"></i>
@@ -347,9 +505,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
         <!-- KONTEN UTAMA -->
 
-        <main class="col-md-9 col-lg-10 p-4">
-
-            <!-- HEADER -->
+        <main class="main-content">
 
             <div class="card shadow-sm p-4 bg-white mb-4">
 
@@ -398,8 +554,8 @@ while ($row = mysqli_fetch_assoc($query)) {
                     <button
                         type="button"
                         class="btn-close"
-                        data-bs-dismiss="alert"
-                    ></button>
+                        data-bs-dismiss="alert">
+                    </button>
 
                 </div>
 
@@ -413,8 +569,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                     <table
                         id="tabelTindakan"
-                        class="table table-bordered table-striped table-hover w-100 align-middle"
-                    >
+                        class="table table-bordered table-striped table-hover w-100 align-middle">
 
                         <thead class="table-dark">
 
@@ -430,8 +585,6 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                         </thead>
 
-                        <!-- TBODY KOSONG TIDAK MENGGUNAKAN COLSPAN -->
-
                         <tbody>
 
                             <?php $no = 1; ?>
@@ -440,9 +593,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                                 <tr>
 
-                                    <td>
-                                        <?= $no++; ?>
-                                    </td>
+                                    <td><?= $no++; ?></td>
 
                                     <td>
                                         <?= !empty($row['tanggal'])
@@ -468,7 +619,7 @@ while ($row = mysqli_fetch_assoc($query)) {
 
                                     <td class="text-center">
                                         <span class="badge bg-danger">
-                                            +<?= (int) ($row['poin'] ?? 0); ?>
+                                            +<?= (int)($row['poin'] ?? 0); ?>
                                         </span>
                                     </td>
 
@@ -486,10 +637,11 @@ while ($row = mysqli_fetch_assoc($query)) {
                                             type="button"
                                             class="btn btn-sm btn-primary"
                                             data-bs-toggle="modal"
-                                            data-bs-target="#modalTindakan<?= (int) $row['id']; ?>"
-                                        >
+                                            data-bs-target="#modalTindakan<?= (int)$row['id']; ?>">
+
                                             <i class="bi bi-hammer me-1"></i>
                                             Beri Tindakan
+
                                         </button>
 
                                     </td>
@@ -518,10 +670,9 @@ while ($row = mysqli_fetch_assoc($query)) {
 
     <div
         class="modal fade"
-        id="modalTindakan<?= (int) $row['id']; ?>"
+        id="modalTindakan<?= (int)$row['id']; ?>"
         tabindex="-1"
-        aria-hidden="true"
-    >
+        aria-hidden="true">
 
         <div class="modal-dialog">
 
@@ -538,8 +689,8 @@ while ($row = mysqli_fetch_assoc($query)) {
                         <button
                             type="button"
                             class="btn-close"
-                            data-bs-dismiss="modal"
-                        ></button>
+                            data-bs-dismiss="modal">
+                        </button>
 
                     </div>
 
@@ -548,8 +699,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                         <input
                             type="hidden"
                             name="id_pelanggaran_siswa"
-                            value="<?= (int) $row['id']; ?>"
-                        >
+                            value="<?= (int)$row['id']; ?>">
 
                         <p>
                             Siswa:
@@ -576,7 +726,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                         <div class="mb-3">
 
                             <label class="form-label fw-semibold">
-                                Pilih / Masukkan Jenis Tindakan / Sanksi
+                                Jenis Tindakan / Sanksi
                             </label>
 
                             <textarea
@@ -584,8 +734,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                                 class="form-control"
                                 rows="3"
                                 placeholder="Contoh: Diberikan Surat Peringatan 1 (SP1) / Pembinaan oleh Wali Kelas"
-                                required
-                            ></textarea>
+                                required></textarea>
 
                         </div>
 
@@ -596,18 +745,18 @@ while ($row = mysqli_fetch_assoc($query)) {
                         <button
                             type="button"
                             class="btn btn-secondary"
-                            data-bs-dismiss="modal"
-                        >
+                            data-bs-dismiss="modal">
                             Batal
                         </button>
 
                         <button
                             type="submit"
                             name="proses_tindakan"
-                            class="btn btn-success"
-                        >
+                            class="btn btn-success">
+
                             <i class="bi bi-check-circle me-1"></i>
                             Simpan & Masukkan ke Riwayat
+
                         </button>
 
                     </div>
@@ -632,8 +781,6 @@ while ($row = mysqli_fetch_assoc($query)) {
 
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 
-<!-- DATATABLES -->
-
 <script>
 
 $(document).ready(function () {
@@ -653,13 +800,11 @@ $(document).ready(function () {
         info: true,
 
         columnDefs: [
-
             {
                 targets: [0, 6],
                 orderable: false,
                 searchable: false
             }
-
         ],
 
         language: {
@@ -679,15 +824,10 @@ $(document).ready(function () {
             emptyTable: "Belum ada siswa yang perlu diberi tindakan",
 
             paginate: {
-
                 first: "Pertama",
-
                 last: "Terakhir",
-
                 next: "Selanjutnya",
-
                 previous: "Sebelumnya"
-
             }
 
         }

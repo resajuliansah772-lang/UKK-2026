@@ -1,15 +1,21 @@
 
 <?php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+if (!isset($_SESSION['login']) || $_SESSION['login'] !== true) {
+    header("Location: login.php");
+    exit;
 }
 
 include "includes/cek_session.php";
 include "config/koneksi.php";
 
-// ==========================================
+// =====================================
 // IDENTITAS USER
-// ==========================================
+// =====================================
 
 $halaman = 'laporan';
 
@@ -20,98 +26,39 @@ $namaUser = htmlspecialchars(
 );
 
 $roleUser = strtolower(trim($_SESSION['role'] ?? 'guru'));
-$roleUser = str_replace([' ', '-'], '_', $roleUser);
 
-$id_user_login = (int) ($_SESSION['id'] ?? $_SESSION['user_id'] ?? 0);
-$guru_id_login = (int) ($_SESSION['guru_id'] ?? $_SESSION['id_guru'] ?? 0);
+$user_id_login = (int)($_SESSION['user_id'] ?? $_SESSION['id'] ?? 0);
+$guru_id_login = (int)($_SESSION['guru_id'] ?? $_SESSION['id_guru'] ?? 0);
 
-// ==========================================
-// FUNGSI PEMERIKSAAN KOLOM DATABASE
-// ==========================================
+// =====================================
+// CEK HAK AKSES
+// ADMIN DAN WALI KELAS
+// =====================================
 
-function ambilKolom($koneksi, $namaTabel)
-{
-    $kolom = [];
+if ($roleUser !== 'admin' && $roleUser !== 'wali_kelas') {
 
-    $namaTabel = mysqli_real_escape_string($koneksi, $namaTabel);
+    if ($user_id_login > 0 && $guru_id_login <= 0) {
 
-    $hasil = mysqli_query(
-        $koneksi,
-        "SHOW COLUMNS FROM `$namaTabel`"
-    );
+        $stmtGuru = mysqli_prepare(
+            $koneksi,
+            "SELECT id FROM t_guru WHERE user_id = ? LIMIT 1"
+        );
 
-    if ($hasil) {
-        while ($row = mysqli_fetch_assoc($hasil)) {
-            $kolom[] = $row['Field'];
-        }
-    }
+        if ($stmtGuru) {
+            mysqli_stmt_bind_param($stmtGuru, "i", $user_id_login);
+            mysqli_stmt_execute($stmtGuru);
+            mysqli_stmt_bind_result($stmtGuru, $idGuru);
 
-    return $kolom;
-}
-
-function pilihKolom($daftarKolom, $pilihan)
-{
-    foreach ($pilihan as $kolom) {
-        if (in_array($kolom, $daftarKolom, true)) {
-            return $kolom;
-        }
-    }
-
-    return null;
-}
-
-function ekspresiKolom($alias, $kolom, $fallback)
-{
-    if ($kolom !== null) {
-        return "`$alias`.`$kolom`";
-    }
-
-    return $fallback;
-}
-
-// ==========================================
-// PROTEKSI HAK AKSES LAPORAN
-// ==========================================
-
-$isAdmin = ($roleUser === 'admin');
-$is_wali_kelas = ($roleUser === 'wali_kelas');
-
-if (!$isAdmin && !$is_wali_kelas) {
-
-    // Cari ID guru melalui user_id jika tersedia
-    if ($guru_id_login <= 0 && $id_user_login > 0) {
-
-        $kolomGuru = ambilKolom($koneksi, 't_guru');
-
-        if (in_array('user_id', $kolomGuru, true)) {
-
-            $stmtGuru = mysqli_prepare(
-                $koneksi,
-                "SELECT id FROM t_guru WHERE user_id = ? LIMIT 1"
-            );
-
-            if ($stmtGuru) {
-                mysqli_stmt_bind_param(
-                    $stmtGuru,
-                    "i",
-                    $id_user_login
-                );
-
-                mysqli_stmt_execute($stmtGuru);
-
-                $hasilGuru = mysqli_stmt_get_result($stmtGuru);
-
-                if ($hasilGuru && mysqli_num_rows($hasilGuru) > 0) {
-                    $dataGuru = mysqli_fetch_assoc($hasilGuru);
-                    $guru_id_login = (int) $dataGuru['id'];
-                }
-
-                mysqli_stmt_close($stmtGuru);
+            if (mysqli_stmt_fetch($stmtGuru)) {
+                $guru_id_login = (int)$idGuru;
             }
+
+            mysqli_stmt_close($stmtGuru);
         }
     }
 
-    // Periksa apakah guru merupakan wali kelas aktif
+    $waliAktif = false;
+
     if ($guru_id_login > 0) {
 
         $stmtWali = mysqli_prepare(
@@ -124,249 +71,245 @@ if (!$isAdmin && !$is_wali_kelas) {
         );
 
         if ($stmtWali) {
-
-            mysqli_stmt_bind_param(
-                $stmtWali,
-                "i",
-                $guru_id_login
-            );
-
+            mysqli_stmt_bind_param($stmtWali, "i", $guru_id_login);
             mysqli_stmt_execute($stmtWali);
+            mysqli_stmt_store_result($stmtWali);
 
-            $hasilWali = mysqli_stmt_get_result($stmtWali);
-
-            if ($hasilWali && mysqli_num_rows($hasilWali) > 0) {
-                $is_wali_kelas = true;
-            }
+            $waliAktif = mysqli_stmt_num_rows($stmtWali) > 0;
 
             mysqli_stmt_close($stmtWali);
         }
     }
+
+    if (!$waliAktif) {
+        echo "<script>
+            alert('Akses ditolak! Halaman laporan hanya dapat dibuka oleh Admin dan Wali Kelas.');
+            window.location='dashboard.php';
+        </script>";
+        exit;
+    }
+
+    $roleUser = 'wali_kelas';
 }
 
-$tampilkan_menu_laporan = ($isAdmin || $is_wali_kelas);
+// =====================================
+// AMBIL ID GURU WALI KELAS
+// =====================================
 
-if (!$tampilkan_menu_laporan) {
-    echo "<script>
-        alert('Maaf, halaman laporan hanya dapat diakses Admin dan Wali Kelas.');
-        window.location.href = 'dashboard.php';
-    </script>";
-    exit;
-}
+if ($roleUser === 'wali_kelas' && $guru_id_login <= 0) {
 
-// ==========================================
-// AMBIL STRUKTUR TABEL
-// ==========================================
-
-$kolomPS = ambilKolom($koneksi, 't_pelanggaran_siswa');
-$kolomSiswa = ambilKolom($koneksi, 't_siswa');
-$kolomPelanggaran = ambilKolom($koneksi, 't_pelanggaran');
-$kolomGuru = ambilKolom($koneksi, 't_guru');
-
-// ==========================================
-// QUERY DATA LAPORAN
-// ==========================================
-
-$queryLaporan = false;
-$errorLaporan = '';
-
-if (empty($kolomPS)) {
-
-    $errorLaporan = "Tabel t_pelanggaran_siswa tidak ditemukan.";
-
-} elseif (empty($kolomSiswa)) {
-
-    $errorLaporan = "Tabel t_siswa tidak ditemukan.";
-
-} else {
-
-    // Kolom catatan pelanggaran
-    $idPS = pilihKolom($kolomPS, ['id']);
-
-    $tanggalPS = pilihKolom(
-        $kolomPS,
-        ['tanggal', 'tanggal_pelanggaran', 'tgl_pelanggaran', 'created_at']
+    $stmtGuru = mysqli_prepare(
+        $koneksi,
+        "SELECT id FROM t_guru WHERE user_id = ? LIMIT 1"
     );
 
-    $siswaID = pilihKolom($kolomPS, ['siswa_id']);
+    if ($stmtGuru) {
+        mysqli_stmt_bind_param($stmtGuru, "i", $user_id_login);
+        mysqli_stmt_execute($stmtGuru);
+        mysqli_stmt_bind_result($stmtGuru, $idGuru);
 
-    $pelanggaranID = pilihKolom(
-        $kolomPS,
-        ['pelanggaran_id']
-    );
-
-    $guruID = pilihKolom($kolomPS, ['guru_id']);
-
-    $keteranganPS = pilihKolom(
-        $kolomPS,
-        ['keterangan', 'deskripsi', 'catatan']
-    );
-
-    // Kolom siswa
-    $nisSiswa = pilihKolom($kolomSiswa, ['nis']);
-
-    $namaSiswa = pilihKolom(
-        $kolomSiswa,
-        ['nama', 'nama_siswa']
-    );
-
-    // Kolom jenis pelanggaran
-    $namaPelanggaran = pilihKolom(
-        $kolomPelanggaran,
-        ['nama_pelanggaran', 'nama', 'jenis_pelanggaran']
-    );
-
-    $poinPelanggaran = pilihKolom(
-        $kolomPelanggaran,
-        ['poin', 'jumlah_poin', 'point']
-    );
-
-    // Kolom guru
-    $namaGuru = pilihKolom(
-        $kolomGuru,
-        ['nama', 'nama_guru']
-    );
-
-    // ======================================
-    // MENYIAPKAN SELECT
-    // ======================================
-
-    $select = [];
-
-    $select[] = ekspresiKolom(
-        'ps',
-        $idPS,
-        "0"
-    ) . " AS id_catatan";
-
-    $select[] = ekspresiKolom(
-        'ps',
-        $tanggalPS,
-        "'-'"
-    ) . " AS tanggal";
-
-    $select[] = ekspresiKolom(
-        's',
-        $nisSiswa,
-        "'-'"
-    ) . " AS nis";
-
-    $select[] = ekspresiKolom(
-        's',
-        $namaSiswa,
-        "'Nama siswa tidak tersedia'"
-    ) . " AS nama_siswa";
-
-    $select[] = ekspresiKolom(
-        'p',
-        $namaPelanggaran,
-        "'Jenis pelanggaran tidak tersedia'"
-    ) . " AS nama_pelanggaran";
-
-    $select[] = ekspresiKolom(
-        'p',
-        $poinPelanggaran,
-        "0"
-    ) . " AS poin";
-
-    $select[] = ekspresiKolom(
-        'g',
-        $namaGuru,
-        "'Tidak diketahui'"
-    ) . " AS nama_guru";
-
-    $select[] = ekspresiKolom(
-        'ps',
-        $keteranganPS,
-        "'-'"
-    ) . " AS keterangan";
-
-    // ======================================
-    // RELASI TABEL SISWA
-    // ======================================
-
-    $joinSiswa = '';
-
-    if (
-        $siswaID !== null &&
-        in_array('id', $kolomSiswa, true)
-    ) {
-        $joinSiswa = "
-            LEFT JOIN t_siswa s
-            ON ps.`$siswaID` = s.id
-        ";
-    } else {
-        $errorLaporan = "Relasi siswa_id atau kolom id pada t_siswa tidak ditemukan.";
-    }
-
-    // ======================================
-    // RELASI TABEL PELANGGARAN
-    // ======================================
-
-    $joinPelanggaran = '';
-
-    if (
-        $pelanggaranID !== null &&
-        in_array('id', $kolomPelanggaran, true)
-    ) {
-        $joinPelanggaran = "
-            LEFT JOIN t_pelanggaran p
-            ON ps.`$pelanggaranID` = p.id
-        ";
-    }
-
-    // ======================================
-    // RELASI TABEL GURU
-    // ======================================
-
-    $joinGuru = '';
-
-    if (
-        $guruID !== null &&
-        in_array('id', $kolomGuru, true)
-    ) {
-        $joinGuru = "
-            LEFT JOIN t_guru g
-            ON ps.`$guruID` = g.id
-        ";
-    }
-
-    // ======================================
-    // EKSEKUSI QUERY
-    // ======================================
-
-    if ($errorLaporan === '') {
-
-        $orderBy = $tanggalPS !== null
-            ? "ORDER BY ps.`$tanggalPS` DESC"
-            : "ORDER BY ps.id DESC";
-
-        $sqlLaporan = "
-            SELECT
-                " . implode(",\n", $select) . "
-            FROM t_pelanggaran_siswa ps
-            $joinSiswa
-            $joinPelanggaran
-            $joinGuru
-            $orderBy
-        ";
-
-        $queryLaporan = mysqli_query($koneksi, $sqlLaporan);
-
-        if (!$queryLaporan) {
-            $errorLaporan = "Gagal mengambil laporan: " . mysqli_error($koneksi);
+        if (mysqli_stmt_fetch($stmtGuru)) {
+            $guru_id_login = (int)$idGuru;
         }
+
+        mysqli_stmt_close($stmtGuru);
     }
 }
 
-// ==========================================
-// TOTAL LAPORAN
-// ==========================================
+// =====================================
+// AMBIL KELAS WALI KELAS
+// =====================================
 
-$totalLaporan = 0;
+$kelas_id_login = 0;
 
-if ($queryLaporan) {
-    $totalLaporan = mysqli_num_rows($queryLaporan);
+if ($roleUser === 'wali_kelas') {
+
+    $stmtKelas = mysqli_prepare(
+        $koneksi,
+        "SELECT kelas_id
+         FROM t_wali_kelas
+         WHERE guru_id = ?
+         AND status_aktif = 1
+         LIMIT 1"
+    );
+
+    if ($stmtKelas) {
+        mysqli_stmt_bind_param($stmtKelas, "i", $guru_id_login);
+        mysqli_stmt_execute($stmtKelas);
+        mysqli_stmt_bind_result($stmtKelas, $idKelas);
+
+        if (mysqli_stmt_fetch($stmtKelas)) {
+            $kelas_id_login = (int)$idKelas;
+        }
+
+        mysqli_stmt_close($stmtKelas);
+    }
+
+    if ($kelas_id_login <= 0) {
+        echo "<script>
+            alert('Data kelas wali kelas tidak ditemukan.');
+            window.location='dashboard.php';
+        </script>";
+        exit;
+    }
+}
+
+// =====================================
+// FILTER WALI KELAS
+// =====================================
+
+$filter_guru = "";
+
+if ($roleUser === 'wali_kelas') {
+
+    $filter_guru = "
+        WHERE EXISTS (
+            SELECT 1
+            FROM t_kelas_siswa ks_filter
+            WHERE ks_filter.siswa_id = ps.siswa_id
+            AND ks_filter.kelas_id = " . (int)$kelas_id_login . "
+        )
+    ";
+}
+
+// =====================================
+// QUERY LAPORAN
+// =====================================
+
+$sql_query = "
+    SELECT
+        ps.id,
+        ps.tanggal,
+        s.nis,
+        ps.nama_siswa,
+
+        COALESCE(
+            (
+                SELECT k.nama
+                FROM t_kelas_siswa ks
+                LEFT JOIN t_kelas k
+                    ON ks.kelas_id = k.id
+                WHERE ks.siswa_id = ps.siswa_id
+                LIMIT 1
+            ),
+            '-'
+        ) AS nama_kelas,
+
+        ps.nama_pelanggaran,
+        ps.poin,
+        ps.nama_guru,
+        ps.keterangan
+
+    FROM t_pelanggaran_siswa ps
+
+    LEFT JOIN t_siswa s
+        ON ps.siswa_id = s.id
+
+    $filter_guru
+
+    ORDER BY ps.tanggal DESC, ps.id DESC
+";
+
+$query = mysqli_query($koneksi, $sql_query);
+
+if (!$query) {
+    die("Query laporan gagal: " . mysqli_error($koneksi));
+}
+
+// =====================================
+// HITUNG DATA LAPORAN
+// =====================================
+
+$data_laporan = [];
+$total_data = 0;
+$total_poin = 0;
+
+while ($row = mysqli_fetch_assoc($query)) {
+
+    $data_laporan[] = $row;
+
+    $total_data++;
+
+    $total_poin += (int)($row['poin'] ?? 0);
+}
+
+// =====================================
+// EXPORT EXCEL
+// =====================================
+
+if (isset($_GET['export']) && $_GET['export'] === 'excel') {
+
+    $nama_file = "Laporan_Pelanggaran_" . date('Y-m-d') . ".xls";
+
+    header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
+    header("Content-Disposition: attachment; filename=\"$nama_file\"");
+
+    echo "\xEF\xBB\xBF";
+    ?>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th colspan="8">LAPORAN PELANGGARAN SISWA</th>
+            </tr>
+
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Jenis Pelanggaran</th>
+                <th>Poin</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <?php $no = 1; ?>
+
+            <?php foreach ($data_laporan as $row) { ?>
+
+                <tr>
+                    <td><?= $no++; ?></td>
+
+                    <td>
+                        <?= htmlspecialchars($row['tanggal'] ?? '-'); ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars($row['nis'] ?? '-'); ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars($row['nama_siswa'] ?? '-'); ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars($row['nama_kelas'] ?? '-'); ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars($row['nama_pelanggaran'] ?? '-'); ?>
+                    </td>
+
+                    <td>
+                        <?= (int)($row['poin'] ?? 0); ?>
+                    </td>
+
+                    <td>
+                        <?= htmlspecialchars($row['keterangan'] ?? '-'); ?>
+                    </td>
+                </tr>
+
+            <?php } ?>
+
+        </tbody>
+    </table>
+
+    <?php
+    exit;
 }
 
 ?>
@@ -377,30 +320,75 @@ if ($queryLaporan) {
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Laporan - Sistem Pelanggaran Siswa</title>
+    <title>Laporan - Sistem Informasi Pelanggaran Siswa</title>
 
-    <!-- BOOTSTRAP -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- BOOTSTRAP CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
 
     <!-- BOOTSTRAP ICONS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet">
 
-    <!-- DATATABLES -->
-    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- DATATABLES CSS -->
+    <link href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css"
+          rel="stylesheet">
 
     <style>
 
+        /* =====================================
+           PENGATURAN BODY
+        ===================================== */
+
         body {
             background-color: #f4f6f9;
+            overflow-x: hidden;
         }
 
+        /* =====================================
+           SIDEBAR TETAP DI KIRI
+        ===================================== */
+
         .sidebar {
-            background: linear-gradient(180deg, #212529 0%, #1a1e21 100%);
-            min-height: 100vh;
+            background: linear-gradient(
+                180deg,
+                #212529 0%,
+                #1a1e21 100%
+            );
+
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            z-index: 1030;
+            box-sizing: border-box;
         }
+
+        /* SCROLLBAR SIDEBAR */
+
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: #888;
+        }
+
+        /* =====================================
+           MENU SIDEBAR
+        ===================================== */
 
         .nav-link {
             transition: all 0.3s ease;
@@ -414,51 +402,137 @@ if ($queryLaporan) {
             padding-left: 15px;
         }
 
-        .card {
-            border: none;
-            border-radius: 12px;
+        /* =====================================
+           KONTEN UTAMA DESKTOP
+        ===================================== */
+
+        @media (min-width: 992px) {
+
+            .sidebar {
+                width: 16.666667%;
+            }
+
+            main.col-md-9,
+            main.col-lg-10 {
+                margin-left: 16.666667%;
+                width: 83.333333%;
+                flex: 0 0 auto;
+            }
+
         }
 
-        /* =================================
-           HEADER TABEL DATATABLES
-        ================================= */
+        /* =====================================
+           KONTEN UTAMA TABLET
+        ===================================== */
 
-        #tabelLaporan thead th,
-        #tabelLaporan_wrapper table thead th {
-            background-color: #212529 !important;
-            color: #ffffff !important;
-            font-weight: bold !important;
-            white-space: nowrap;
-            text-align: left;
+        @media (min-width: 768px) and (max-width: 991.98px) {
+
+            .sidebar {
+                width: 25%;
+            }
+
+            main.col-md-9,
+            main.col-lg-10 {
+                margin-left: 25%;
+                width: 75%;
+                flex: 0 0 auto;
+            }
+
+        }
+
+        /* =====================================
+           TAMPILAN HP
+        ===================================== */
+
+        @media (max-width: 767.98px) {
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                overflow-y: visible;
+            }
+
+            main.col-md-9,
+            main.col-lg-10 {
+                margin-left: 0;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+        }
+
+        /* =====================================
+           TABEL LAPORAN
+        ===================================== */
+
+        #tabelLaporan th,
+        #tabelLaporan td {
             vertical-align: middle;
-            opacity: 1 !important;
         }
 
-        #tabelLaporan thead th .dt-column-title {
-            color: #ffffff !important;
-            opacity: 1 !important;
-        }
-
-        #tabelLaporan thead th .dt-column-order {
-            color: #ffffff !important;
-        }
-
-        #tabelLaporan thead th span {
-            color: #ffffff !important;
-        }
-
-        #tabelLaporan tbody td {
-            vertical-align: middle;
+        .dataTables_wrapper {
+            margin-top: 15px;
         }
 
         .table-responsive {
             width: 100%;
         }
 
+        /* =====================================
+           CARD
+        ===================================== */
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        /* =====================================
+           UKURAN JUDUL
+        ===================================== */
+
+        .judul-halaman {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+        .deskripsi-halaman {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 12px;
+        }
+
+        .judul-statistik {
+            font-size: 13px;
+            font-weight: 400;
+            color: #6c757d;
+        }
+
+        .angka-statistik {
+            font-size: 22px;
+            font-weight: 400;
+        }
+
+        /* =====================================
+           CETAK LAPORAN
+        ===================================== */
+
         @media print {
 
+            @page {
+                size: landscape;
+                margin: 10mm;
+            }
+
+            body {
+                background: white !important;
+            }
+
             .sidebar,
-            .no-print,
+            .tombol-aksi,
             .dt-search,
             .dt-length,
             .dt-paging,
@@ -467,24 +541,34 @@ if ($queryLaporan) {
             }
 
             main {
+                margin-left: 0 !important;
                 width: 100% !important;
                 padding: 0 !important;
             }
 
-            body {
-                background: white !important;
+            .container-fluid,
+            .row {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
             .card {
                 box-shadow: none !important;
+                border: none !important;
             }
 
-            #tabelLaporan thead th {
-                background-color: #212529 !important;
-                color: white !important;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
+            #tabelLaporan {
+                width: 100% !important;
             }
+
+            #tabelLaporan th,
+            #tabelLaporan td {
+                font-size: 11px !important;
+                padding: 6px !important;
+            }
+
         }
 
     </style>
@@ -501,7 +585,7 @@ if ($queryLaporan) {
              SIDEBAR
         ================================== -->
 
-        <div class="col-md-3 col-lg-2 sidebar p-3 no-print">
+        <div class="col-md-3 col-lg-2 sidebar p-3">
 
             <h4 class="text-white mb-4 fw-bold fs-5 px-2">
 
@@ -511,86 +595,78 @@ if ($queryLaporan) {
 
             </h4>
 
-            <?php if ($isAdmin) { ?>
 
-                <!-- MENU ADMIN -->
+            <!-- =================================
+                 MENU ADMIN
+            ================================== -->
+
+            <?php if ($roleUser === 'admin') { ?>
 
                 <ul class="nav nav-pills flex-column gap-1">
 
                     <li class="nav-item">
                         <a href="dashboard.php" class="nav-link text-white">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="data_siswa.php" class="nav-link text-white">
-                            <i class="bi bi-people me-2"></i>
-                            Data Siswa
+                            <i class="bi bi-people me-2"></i> Data Siswa
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="data_guru.php" class="nav-link text-white">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Data Guru
+                            <i class="bi bi-person-badge me-2"></i> Data Guru
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="kelas.php" class="nav-link text-white">
-                            <i class="bi bi-door-open me-2"></i>
-                            Kelas
+                            <i class="bi bi-door-open me-2"></i> Kelas
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="tahun_ajaran.php" class="nav-link text-white">
-                            <i class="bi bi-calendar-range me-2"></i>
-                            Tahun Ajaran
+                            <i class="bi bi-calendar-range me-2"></i> Tahun Ajaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="penepatan_siswa.php" class="nav-link text-white">
-                            <i class="bi bi-journal-check me-2"></i>
-                            Penempatan Siswa
+                            <i class="bi bi-journal-check me-2"></i> Penempatan Siswa
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="wali_kelas.php" class="nav-link text-white">
-                            <i class="bi bi-person-workspace me-2"></i>
-                            Wali Kelas
+                            <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="kategori_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-tags me-2"></i>
-                            Kategori Pelanggaran
+                            <i class="bi bi-tags me-2"></i> Kategori Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="jenis_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-list-task me-2"></i>
-                            Jenis Pelanggaran
+                            <i class="bi bi-list-task me-2"></i> Jenis Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="laporan.php" class="nav-link active">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Laporan
+                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="aboutme.php" class="nav-link text-white">
-                            <i class="bi bi-info-circle me-2"></i>
-                            About Me
+                            <i class="bi bi-info-circle me-2"></i> About Me
                         </a>
                     </li>
 
@@ -598,58 +674,56 @@ if ($queryLaporan) {
 
                     <li class="nav-item">
                         <a href="logout.php" class="nav-link text-danger">
-                            <i class="bi bi-box-arrow-right me-2"></i>
-                            Logout
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
                         </a>
                     </li>
 
                 </ul>
 
-            <?php } else { ?>
+            <?php } ?>
 
-                <!-- MENU WALI KELAS -->
+
+            <!-- =================================
+                 MENU WALI KELAS
+            ================================== -->
+
+            <?php if ($roleUser === 'wali_kelas') { ?>
 
                 <ul class="nav nav-pills flex-column gap-1">
 
                     <li class="nav-item">
                         <a href="dashboard.php" class="nav-link text-white">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Dashboard
+                            <i class="bi bi-speedometer2 me-2"></i> Dashboard
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="catatan_pelanggaran.php" class="nav-link text-white">
-                            <i class="bi bi-journal-text me-2"></i>
-                            Catatan Pelanggaran
+                            <i class="bi bi-journal-text me-2"></i> Catatan Pelanggaran
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="tindakan.php" class="nav-link text-white">
-                            <i class="bi bi-hammer me-2"></i>
-                            Tindakan
+                            <i class="bi bi-hammer me-2"></i> Tindakan
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="laporan.php" class="nav-link active">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Laporan
+                            <i class="bi bi-file-earmark-text me-2"></i> Laporan
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a href="riwayat.php" class="nav-link text-white">
-                            <i class="bi bi-clock-history me-2"></i>
-                            Riwayat
+                        <a href="Riwayat.php" class="nav-link text-white">
+                            <i class="bi bi-clock-history me-2"></i> Riwayat
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a href="rekap_poin.php" class="nav-link text-white">
-                            <i class="bi bi-award me-2"></i>
-                            Rekap Poin
+                            <i class="bi bi-award me-2"></i> Rekap Poin
                         </a>
                     </li>
 
@@ -657,8 +731,7 @@ if ($queryLaporan) {
 
                     <li class="nav-item">
                         <a href="logout.php" class="nav-link text-danger">
-                            <i class="bi bi-box-arrow-right me-2"></i>
-                            Logout
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
                         </a>
                     </li>
 
@@ -668,66 +741,69 @@ if ($queryLaporan) {
 
         </div>
 
+
         <!-- =================================
              KONTEN UTAMA
         ================================== -->
 
         <main class="col-md-9 col-lg-10 p-4">
 
-            <!-- HEADER -->
+            <div class="card shadow-sm p-4 bg-white">
 
-            <div class="card shadow-sm p-4 mb-4">
+                <!-- JUDUL HALAMAN -->
 
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <h2 class="judul-halaman">
+                    Laporan Pelanggaran Siswa
+                </h2>
 
-                    <div>
+                <p class="deskripsi-halaman">
+                    Laporan data pelanggaran siswa pada sistem pelanggaran siswa
+                </p>
 
-                        <h2 class="mb-1">
-                            Laporan Pelanggaran Siswa
-                        </h2>
 
-                        <p class="text-muted mb-0">
-                            Rekapitulasi dan laporan data pelanggaran siswa.
-                        </p>
+                <!-- =================================
+                     RINGKASAN LAPORAN
+                ================================== -->
 
-                    </div>
+                <div class="row mb-3">
 
-                    <span class="badge bg-primary p-2">
+                    <!-- TOTAL PELANGGARAN -->
 
-                        <i class="bi bi-shield-check me-1"></i>
+                    <div class="col-md-6 mb-3">
 
-                        <?= $isAdmin ? 'Administrator' : 'Wali Kelas'; ?>
+                        <div class="card shadow-sm p-3 bg-light">
 
-                    </span>
+                            <div class="card-body">
 
-                </div>
+                                <h6 class="judul-statistik">
+                                    Total Pelanggaran
+                                </h6>
 
-            </div>
-
-            <!-- TOTAL LAPORAN -->
-
-            <div class="row mb-4">
-
-                <div class="col-md-4">
-
-                    <div class="card shadow-sm p-3">
-
-                        <div class="d-flex align-items-center gap-3">
-
-                            <div class="bg-primary-subtle text-primary rounded p-3">
-
-                                <i class="bi bi-file-earmark-text fs-3"></i>
+                                <h3 class="angka-statistik text-primary">
+                                    <?= $total_data; ?>
+                                </h3>
 
                             </div>
 
-                            <div>
+                        </div>
 
-                                <div class="text-muted">
-                                    Total Catatan Pelanggaran
-                                </div>
+                    </div>
 
-                                <h3 class="fw-bold mb-0">
-                                    <?= $totalLaporan; ?>
+
+                    <!-- TOTAL POIN -->
+
+                    <div class="col-md-6 mb-3">
+
+                        <div class="card shadow-sm p-3 bg-light">
+
+                            <div class="card-body">
+
+                                <h6 class="judul-statistik">
+                                    Total Poin Pelanggaran
+                                </h6>
+
+                                <h3 class="angka-statistik text-danger">
+                                    <?= $total_poin; ?>
                                 </h3>
 
                             </div>
@@ -738,222 +814,114 @@ if ($queryLaporan) {
 
                 </div>
 
-            </div>
 
-            <!-- TABEL LAPORAN -->
+                <!-- =================================
+                     TOMBOL EXPORT DAN CETAK
+                ================================== -->
 
-            <div class="card shadow-sm p-4">
+                <div class="mb-3 tombol-aksi d-flex gap-2 flex-wrap">
 
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <a href="laporan.php?export=excel"
+                       class="btn btn-success btn-sm">
 
-                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-file-earmark-excel me-1"></i>
+                        Export Excel
 
-                        <i class="bi bi-table me-2"></i>
+                    </a>
 
-                        Data Laporan Pelanggaran
-
-                    </h5>
-
-                    <button
-                        type="button"
-                        class="btn btn-success no-print"
-                        onclick="window.print()"
-                    >
+                    <button type="button"
+                            onclick="cetakLaporan()"
+                            class="btn btn-primary btn-sm">
 
                         <i class="bi bi-printer me-1"></i>
-
                         Cetak Laporan
 
                     </button>
 
                 </div>
 
-                <?php if ($errorLaporan !== '') { ?>
 
-                    <div class="alert alert-danger">
+                <!-- =================================
+                     TABEL LAPORAN
+                ================================== -->
 
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div class="table-responsive">
 
-                        <?= htmlspecialchars(
-                            $errorLaporan,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ); ?>
+                    <table id="tabelLaporan"
+                           class="table table-bordered table-striped table-hover w-100 align-middle">
 
-                    </div>
+                        <thead class="table-dark">
 
-                <?php } else { ?>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal</th>
+                                <th>NIS</th>
+                                <th>Nama Siswa</th>
+                                <th>Kelas</th>
+                                <th>Jenis Pelanggaran</th>
+                                <th>Poin</th>
+                                <th>Keterangan</th>
+                            </tr>
 
-                    <div class="table-responsive">
+                        </thead>
 
-                        <table
-                            id="tabelLaporan"
-                            class="table table-bordered table-striped table-hover align-middle w-100"
-                        >
+                        <tbody>
 
-                            <thead>
+                            <?php
+                            $no = 1;
+
+                            foreach ($data_laporan as $row) {
+                            ?>
 
                                 <tr>
 
-                                    <th>No</th>
+                                    <td>
+                                        <?= $no++; ?>
+                                    </td>
 
-                                    <th>Tanggal</th>
+                                    <td>
+                                        <?= !empty($row['tanggal'])
+                                            ? date('d-m-Y', strtotime($row['tanggal']))
+                                            : '-'; ?>
+                                    </td>
 
-                                    <th>NIS</th>
+                                    <td>
+                                        <?= htmlspecialchars($row['nis'] ?? '-'); ?>
+                                    </td>
 
-                                    <th>Nama Siswa</th>
+                                    <td>
+                                        <?= htmlspecialchars($row['nama_siswa'] ?? '-'); ?>
+                                    </td>
 
-                                    <th>Pelanggaran</th>
+                                    <td>
+                                        <?= htmlspecialchars($row['nama_kelas'] ?? '-'); ?>
+                                    </td>
 
-                                    <th>Poin</th>
+                                    <td>
+                                        <?= htmlspecialchars($row['nama_pelanggaran'] ?? '-'); ?>
+                                    </td>
 
-                                    <th>Pelapor</th>
+                                    <td class="text-center">
 
-                                    <th>Keterangan</th>
+                                        <span class="badge text-bg-danger">
+                                            +<?= (int)($row['poin'] ?? 0); ?>
+                                        </span>
+
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars($row['keterangan'] ?? '-'); ?>
+                                    </td>
 
                                 </tr>
 
-                            </thead>
+                            <?php } ?>
 
-                            <tbody>
+                        </tbody>
 
-                                <?php
+                    </table>
 
-                                $no = 1;
-
-                                if (
-                                    $queryLaporan &&
-                                    mysqli_num_rows($queryLaporan) > 0
-                                ) {
-
-                                    while ($data = mysqli_fetch_assoc($queryLaporan)) {
-
-                                        $tanggal = $data['tanggal'] ?? '-';
-
-                                        if (
-                                            $tanggal !== '-' &&
-                                            $tanggal !== '' &&
-                                            strtotime($tanggal) !== false
-                                        ) {
-                                            $tanggal = date(
-                                                'd-m-Y',
-                                                strtotime($tanggal)
-                                            );
-                                        }
-
-                                        $nis = htmlspecialchars(
-                                            $data['nis'] ?? '-',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-
-                                        $namaSiswaTampil = htmlspecialchars(
-                                            $data['nama_siswa'] ?? '-',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-
-                                        $pelanggaranTampil = htmlspecialchars(
-                                            $data['nama_pelanggaran'] ?? '-',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-
-                                        $namaGuruTampil = htmlspecialchars(
-                                            $data['nama_guru'] ?? '-',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-
-                                        $keteranganTampil = htmlspecialchars(
-                                            $data['keterangan'] ?? '-',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-
-                                        $poin = (int) ($data['poin'] ?? 0);
-
-                                        ?>
-
-                                        <tr>
-
-                                            <td>
-                                                <?= $no++; ?>
-                                            </td>
-
-                                            <td>
-                                                <?= htmlspecialchars(
-                                                    $tanggal,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                ); ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $nis; ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $namaSiswaTampil; ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $pelanggaranTampil; ?>
-                                            </td>
-
-                                            <td>
-                                                <span class="badge bg-danger">
-                                                    <?= $poin; ?>
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <?= $namaGuruTampil; ?>
-                                            </td>
-
-                                            <td>
-                                                <?= $keteranganTampil; ?>
-                                            </td>
-
-                                        </tr>
-
-                                        <?php
-
-                                    }
-
-                                } else {
-
-                                    ?>
-
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted">
-                                            Belum ada data pelanggaran yang tersimpan.
-                                        </td>
-                                    </tr>
-
-                                    <?php
-
-                                }
-
-                                ?>
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                <?php } ?>
-
-            </div>
-
-            <!-- FOOTER -->
-
-            <div class="text-center text-muted mt-4">
-
-                <small>
-                    Sistem Pelanggaran Siswa &copy; <?= date('Y'); ?>
-                </small>
+                </div>
 
             </div>
 
@@ -963,19 +931,27 @@ if ($queryLaporan) {
 
 </div>
 
-<!-- =================================
-     JAVASCRIPT
-================================== -->
 
+<!-- =====================================
+     JAVASCRIPT
+===================================== -->
+
+<!-- JQUERY -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
+<!-- BOOTSTRAP JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- DATATABLES JS -->
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
-
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 
+
 <script>
+
+// =====================================
+// INISIALISASI DATATABLES
+// =====================================
 
 $(document).ready(function () {
 
@@ -983,32 +959,47 @@ $(document).ready(function () {
 
         pageLength: 10,
 
-        order: [],
+        lengthMenu: [5, 10, 25, 50, 100],
+
+        searching: true,
+
+        ordering: true,
+
+        paging: true,
+
+        info: true,
+
+        columnDefs: [
+            {
+                targets: [0],
+                orderable: false,
+                searchable: false
+            }
+        ],
+
+        order: [[1, 'desc']],
 
         language: {
 
-            search: "Cari data:",
+            search: "Cari laporan:",
 
             lengthMenu: "Tampilkan _MENU_ data",
 
-            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+            info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ laporan",
 
-            infoEmpty: "Tidak ada data",
+            infoEmpty: "Tidak ada data laporan",
 
-            zeroRecords: "Data tidak ditemukan",
+            infoFiltered: "(difilter dari _MAX_ total laporan)",
 
-            emptyTable: "Belum ada data pelanggaran",
+            zeroRecords: "Data laporan tidak ditemukan",
+
+            emptyTable: "Belum ada data laporan",
 
             paginate: {
-
                 first: "Pertama",
-
                 last: "Terakhir",
-
                 next: "Selanjutnya",
-
                 previous: "Sebelumnya"
-
             }
 
         }
@@ -1016,6 +1007,35 @@ $(document).ready(function () {
     });
 
 });
+
+
+// =====================================
+// CETAK LAPORAN
+// =====================================
+
+function cetakLaporan() {
+
+    let tabel = $('#tabelLaporan').DataTable();
+
+    let panjangAwal = tabel.page.len();
+
+    tabel.page.len(-1).draw();
+
+    setTimeout(function () {
+
+        window.onafterprint = function () {
+
+            tabel.page.len(panjangAwal).draw();
+
+            window.onafterprint = null;
+
+        };
+
+        window.print();
+
+    }, 500);
+
+}
 
 </script>
 

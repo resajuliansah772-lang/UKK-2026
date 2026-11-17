@@ -144,7 +144,7 @@ if (!$query) {
                 </li>
 
                 <li class="nav-item">
-                    <a href="walikelas.php"
+                    <a href="wali_kelas.php"
                        class="nav-link text-white">
                         <i class="bi bi-person-workspace me-2"></i> Wali Kelas
                     </a>
